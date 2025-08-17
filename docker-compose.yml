@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    ports:
+      - ${DB_COMPOSE_PORTS}
+    environment:
+      POSTGRES_USER: ${DB_COMPOSE_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_COMPOSE_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DB_COMPOSE_POSTGRES_DB}
+      TZ: America/Sao_Paulo
+    volumes:
+      - polls_pg_data:/var/lib/postgresql/data
+
+volumes:
+  polls_pg_data:
