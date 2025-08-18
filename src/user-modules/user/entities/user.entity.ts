@@ -28,7 +28,6 @@ export class User {
     @Column({ type: 'varchar', length: 255 })
     profile_picture_link: string;
 
-
     @CreateDateColumn({ type: 'timestamp' })
     created_at: Date;
 
