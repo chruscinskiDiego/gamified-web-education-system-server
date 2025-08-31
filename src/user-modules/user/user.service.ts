@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { HashingServiceProtocol } from '../auth/hashing/hashing.service';
 import { UserXpService } from '../user-xp/user-xp.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
+import { AmazonS3Service } from 'src/external-tools/amazon-s3/amazon-s3.service';
 
 @Injectable()
 export class UserService {
@@ -18,7 +19,9 @@ export class UserService {
 
     private readonly hashingService: HashingServiceProtocol,
 
-    private readonly userXpService: UserXpService
+    private readonly userXpService: UserXpService,
+
+    private readonly amazonS3Service: AmazonS3Service
 
   ) { }
 
@@ -61,6 +64,28 @@ export class UserService {
 
       throw error;
 
+    }
+  }
+
+  async setUserProfilePicture(id: string, file: Express.Multer.File) {
+
+    try{
+
+      const imageUrl: string = await this.amazonS3Service.uploadProfilePicture(file, id);
+
+      await this.userRepository.update(id, {
+        profile_picture_link: imageUrl
+      });
+
+      return {
+        message: 'Foto de perfil atualizada com sucesso!',
+        profile_picture_link: imageUrl
+      }
+
+    }catch(error){
+
+      throw error;
+      
     }
   }
 

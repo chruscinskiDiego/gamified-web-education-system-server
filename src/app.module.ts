@@ -5,6 +5,7 @@ import { UserModule } from './user-modules/user/user.module';
 import { UserXpModule } from './user-modules/user-xp/user-xp.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AmazonS3Module } from './external-tools/amazon-s3/amazon-s3.module';
 
 @Module({
   imports: [
@@ -24,7 +25,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       logging: true, // apenas em dev
     }),
     UserModule,
-    UserXpModule
+    UserXpModule,
+    AmazonS3Module
   ],
   controllers: [AppController],
   providers: [AppService],

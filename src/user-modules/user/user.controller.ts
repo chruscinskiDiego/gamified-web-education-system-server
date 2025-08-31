@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, UseInterceptors, BadRequestException, UploadedFile } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -8,6 +8,7 @@ import { Roles } from '../roles/decorator/roles.decorator';
 import { Role } from '../roles/enum/roles.enum';
 import { JwtUserReqParam } from '../auth/params/token-payload.params';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('user-profile')
 export class UserController {
@@ -18,6 +19,36 @@ export class UserController {
     @Body() createUserDto: CreateUserDto
   ) {
     return await this.userService.createUserProfile(createUserDto);
+  }
+
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 5 * 1024 * 1024 }, // 5mb de limite
+      fileFilter: (_req, file, cb) => {
+        if (!file.mimetype.startsWith('image/')) {
+          cb(new BadRequestException('Somente imagens são permitidas'), false);
+        } else {
+          cb(null, true);
+        }
+      },
+    }),
+  )
+  @Post('/set-profile-picture/:id')
+  async setUserProfilePicture(
+    @Param('id') id: string,
+    @UploadedFile() file: Express.Multer.File
+  ) {
+
+     if (!file) {
+      throw new BadRequestException('Arquivo não enviado');
+    }
+
+    if(!id){
+      throw new BadRequestException('ID da do usuário não enviado');
+    }
+
+    return await this.userService.setUserProfilePicture(id, file);
+
   }
 
   @UseGuards(AuthTokenGuard, RolesGuard)
