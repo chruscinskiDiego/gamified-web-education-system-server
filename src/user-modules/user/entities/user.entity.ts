@@ -4,8 +4,8 @@ import { UserType } from "../dto/user.enum";
 @Entity()
 export class User {
 
-    @PrimaryGeneratedColumn()
-    id_user: number;
+    @PrimaryGeneratedColumn('uuid')
+    id_user: string;
 
     @Column({ type: 'varchar', length: 100, nullable: false })
     name: string;
@@ -25,7 +25,7 @@ export class User {
     @Column({ type: 'date', nullable: false })
     birth_date: Date;
 
-    @Column({ type: 'varchar', length: 255 })
+    @Column({ type: 'varchar', length: 255, nullable:true })
     profile_picture_link: string;
 
     @CreateDateColumn({ type: 'timestamp' })

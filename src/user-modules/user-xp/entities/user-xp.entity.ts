@@ -10,8 +10,8 @@ export class UserXp {
     @Column({type: 'int', default: 0, nullable: false})
     points: number;
 
-    @Column({name: 'fk_id_student'})
-    fk_id_student: number;
+    @Column({name: 'fk_id_student', type: 'uuid'})
+    fk_id_student: string;
 
     @OneToOne(() => User)
     @JoinColumn({ name: 'fk_id_student', referencedColumnName: 'id_user' })

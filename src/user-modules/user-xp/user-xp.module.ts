@@ -10,5 +10,6 @@ import { UserXp } from './entities/user-xp.entity';
   ],
   controllers: [UserXpController],
   providers: [UserXpService],
+  exports: [UserXpService]
 })
 export class UserXpModule {}
