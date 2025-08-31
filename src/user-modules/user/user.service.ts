@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,7 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { HashingServiceProtocol } from '../auth/hashing/hashing.service';
 import { UserXpService } from '../user-xp/user-xp.service';
+import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 
 @Injectable()
 export class UserService {
@@ -63,7 +64,11 @@ export class UserService {
     }
   }
 
-  async findUserProfileById(id: string) {
+  async findUserProfileById(id: string, jwtUserReq: TokenPayloadDto) {
+
+    if((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')){
+      throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
+    }
 
     const user = await this.userRepository.findOne({
       where: { id_user: id },
@@ -86,7 +91,11 @@ export class UserService {
 
   }
 
-  async updateUserProfileById(id: string, updateUserDto: UpdateUserDto) {
+  async updateUserProfileById(id: string, updateUserDto: UpdateUserDto, jwtUserReq: TokenPayloadDto) {
+
+    if((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')){
+      throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
+    }
 
     const user = await this.userRepository.preload({
       id_user: id,
@@ -106,7 +115,11 @@ export class UserService {
 
   }
 
-  async disableUserProfileById(id: string) {
+  async disableUserProfileById(id: string, jwtUserReq: TokenPayloadDto) {
+
+    if((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')){
+      throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
+    }
 
     const user = await this.userRepository.findOne({
       where: {
