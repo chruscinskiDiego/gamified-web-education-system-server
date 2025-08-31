@@ -24,7 +24,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       logging: true, // apenas em dev
     }),
     UserModule,
-    UserXpModule,
+    UserXpModule
   ],
   controllers: [AppController],
   providers: [AppService],

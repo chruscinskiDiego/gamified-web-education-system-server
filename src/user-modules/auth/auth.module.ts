@@ -7,6 +7,7 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule } from "@nestjs/config";
 import jwtConfig from "./config/jwt.config";
 import { User } from "../user/entities/user.entity";
+import { JwtModule } from "@nestjs/jwt";
 
 
 @Global()
@@ -24,11 +25,13 @@ import { User } from "../user/entities/user.entity";
     ],
     exports: [
         HashingServiceProtocol,
+        JwtModule,
         ConfigModule,
     ],
     imports: [
         TypeOrmModule.forFeature([User]),
         ConfigModule.forFeature(jwtConfig),
+        JwtModule.registerAsync(jwtConfig.asProvider()),
     ]
 })
 export class AuthModule {}
