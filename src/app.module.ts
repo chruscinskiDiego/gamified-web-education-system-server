@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AmazonS3Module } from './external-tools/amazon-s3/amazon-s3.module';
 import { CategoryModule } from './course-modules/category/category.module';
+import { CourseModule } from './course-modules/course/course.module';
 
 @Module({
   imports: [
@@ -28,7 +29,8 @@ import { CategoryModule } from './course-modules/category/category.module';
     UserModule,
     UserXpModule,
     AmazonS3Module,
-    CategoryModule
+    CategoryModule,
+    CourseModule
   ],
   controllers: [AppController],
   providers: [AppService],
