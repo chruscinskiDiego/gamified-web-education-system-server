@@ -6,6 +6,7 @@ import { UserXpModule } from './user-modules/user-xp/user-xp.module';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AmazonS3Module } from './external-tools/amazon-s3/amazon-s3.module';
+import { CategoryModule } from './course-modules/category/category.module';
 
 @Module({
   imports: [
@@ -26,7 +27,8 @@ import { AmazonS3Module } from './external-tools/amazon-s3/amazon-s3.module';
     }),
     UserModule,
     UserXpModule,
-    AmazonS3Module
+    AmazonS3Module,
+    CategoryModule
   ],
   controllers: [AppController],
   providers: [AppService],

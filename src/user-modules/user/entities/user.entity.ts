@@ -28,7 +28,7 @@ export class User {
     @Column({ type: 'varchar', length: 255, nullable:true })
     profile_picture_link: string;
 
-    @CreateDateColumn({ type: 'timestamp' })
+    @CreateDateColumn({ type: 'timestamp', nullable: false })
     created_at: Date;
 
     @Column({ type: 'bool', default: true })
