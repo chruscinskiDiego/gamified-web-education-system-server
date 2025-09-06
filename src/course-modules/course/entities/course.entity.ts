@@ -20,7 +20,7 @@ export class Course {
     @Column({ type: 'char', length: 1, nullable: false })
     difficulty_level: string;
 
-    @Column({ type: 'bool', default: true })
+    @Column({ type: 'bool', default: false })
     active: boolean;
 
     @CreateDateColumn({ type: 'timestamp', nullable: false })

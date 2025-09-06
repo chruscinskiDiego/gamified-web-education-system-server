@@ -76,20 +76,24 @@ export class CategoryService {
 
   async disableCategoryById(id: number) {
 
-    const user = await this.categoryRepository.preload({
+    const category = await this.categoryRepository.preload({
       id_category: id,
       active: false
     });
 
-    if(!user){
+    if(!category){
       throw new NotFoundException(`Categoria com ID ${id} não encontrada.`);
     }
 
-    await this.categoryRepository.save(user);
+    if(!category.active){
+      throw new NotFoundException(`Categoria com ID ${id} já está desativada.`);
+    }
+
+    await this.categoryRepository.save(category);
 
     return {
       message: 'Categoria desativada com sucesso!',
-      disabled_category_id: user.id_category
+      disabled_category_id: category.id_category
     }
 
   }
