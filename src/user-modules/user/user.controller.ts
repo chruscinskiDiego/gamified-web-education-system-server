@@ -9,6 +9,7 @@ import { Role } from '../roles/enum/roles.enum';
 import { JwtUserReqParam } from '../auth/params/token-payload.params';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 
 @Controller('user-profile')
 export class UserController {
@@ -21,6 +22,16 @@ export class UserController {
     return await this.userService.createUserProfile(createUserDto);
   }
 
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Post('/create-admin')
+  async createUserAdminProfile(
+    @Body() createUserAdminDto: CreateUserAdminDto
+  ) {
+    return await this.userService.createUserAdminProfile(createUserAdminDto);
+  }
+
+  @UseGuards(AuthTokenGuard)
   @UseInterceptors(
     FileInterceptor('file', {
       limits: { fileSize: 5 * 1024 * 1024 }, // 5mb de limite
@@ -36,18 +47,19 @@ export class UserController {
   @Post('/set-profile-picture/:id')
   async setUserProfilePicture(
     @Param('id') id: string,
+    @JwtUserReqParam() userReq: TokenPayloadDto,
     @UploadedFile() file: Express.Multer.File
   ) {
 
-     if (!file) {
+    if (!file) {
       throw new BadRequestException('Arquivo não enviado');
     }
 
-    if(!id){
+    if (!id) {
       throw new BadRequestException('ID da do usuário não enviado');
     }
 
-    return await this.userService.setUserProfilePicture(id, file);
+    return await this.userService.setUserProfilePicture(id, file, userReq.sub);
 
   }
 

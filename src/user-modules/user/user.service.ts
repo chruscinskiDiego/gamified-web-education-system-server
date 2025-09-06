@@ -8,6 +8,7 @@ import { HashingServiceProtocol } from '../auth/hashing/hashing.service';
 import { UserXpService } from '../user-xp/user-xp.service';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { AmazonS3Service } from 'src/external-tools/amazon-s3/amazon-s3.service';
+import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 
 @Injectable()
 export class UserService {
@@ -67,7 +68,54 @@ export class UserService {
     }
   }
 
-  async setUserProfilePicture(id: string, file: Express.Multer.File) {
+  async createUserAdminProfile(createUserDto: CreateUserAdminDto) {
+
+    try {
+
+      const { password, ...userData } = createUserDto;
+
+      const passwordHash = await this.hashingService.hash(password);
+
+      const userDTO = {
+        ...userData,
+        password: passwordHash,
+        type: 'A'
+      };
+
+      const user = await this.userRepository.create(userDTO as User);
+
+      const createdUser = await this.userRepository.save(user);
+
+      const createdStarterXp = await this.userXpService.createStarterUserXpByUserId(createdUser.id_user);
+
+      if (!createdStarterXp) {
+        throw new ConflictException(`XP já criado para o ID de usuário: ${createdUser.id_user}`);
+      }
+
+      return {
+        message: 'Usuário ADM criado com sucesso!',
+        created_user_id: createdUser.id_user
+      }
+
+    }
+    catch (error) {
+
+      if (error.code === '23505') {
+
+        throw new ConflictException('Email já cadastrado');
+
+      }
+
+      throw error;
+
+    }
+  }
+
+  async setUserProfilePicture(id: string, file: Express.Multer.File, sub: string) {
+
+    if(sub !== id){
+      throw new UnauthorizedException(`Você não tem permissão para alterar a foto de perfil de outro usuário.`);
+    }
 
     try{
 

@@ -1,6 +1,6 @@
 import { IsDateString, IsEmail, IsIn, IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
 
-export class CreateUserDto {
+export class CreateUserAdminDto {
 
     @IsNotEmpty()
     @IsString({
@@ -44,21 +44,6 @@ export class CreateUserDto {
         message: 'A senha do usuário deve ter no máximo 255 caracteres',
     })
     password: string;
-
-    @IsNotEmpty()
-    @IsString({
-        message: 'O tipo do usuário deve ser uma string (1 caractere)',
-    })
-    @MinLength(1, {
-        message: 'O tipo do usuário deve ter 1 caractere',
-    })
-    @MaxLength(1, {
-        message: 'O tipo do usuário deve ter 1 caractere',
-    })
-    @IsIn(['T', 'S'], {
-        message: 'O tipo do usuário deve ser "T" (Teacher) ou "S" (Student)',
-    })
-    type: string;
 
     @IsNotEmpty({
         message: 'A data de nascimento do usuário é obrigatória',
