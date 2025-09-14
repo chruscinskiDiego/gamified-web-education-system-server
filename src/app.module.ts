@@ -9,6 +9,9 @@ import { AmazonS3Module } from './external-tools/amazon-s3/amazon-s3.module';
 import { CategoryModule } from './course-modules/category/category.module';
 import { CourseModule } from './course-modules/course/course.module';
 import { AvaliationModule } from './course-modules/avaliation/avaliation.module';
+import { CourseModuleModule } from './course-modules/course-module/course-module.module';
+import { ModuleEpisodeModule } from './course-modules/module-episode/module-episode.module';
+import { EpisodeProgressModule } from './course-modules/episode-progress/episode-progress.module';
 
 @Module({
   imports: [
@@ -32,7 +35,10 @@ import { AvaliationModule } from './course-modules/avaliation/avaliation.module'
     AmazonS3Module,
     CategoryModule,
     CourseModule,
-    AvaliationModule
+    AvaliationModule,
+    CourseModuleModule,
+    ModuleEpisodeModule,
+    EpisodeProgressModule
   ],
   controllers: [AppController],
   providers: [AppService],

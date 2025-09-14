@@ -60,7 +60,7 @@ export class AvaliationService {
       throw new ForbiddenException('Você não tem permissão para deletar essa avaliação!');
     }
 
-    this.avaliationRepository.delete({id_avaliation: id});
+    await this.avaliationRepository.delete({id_avaliation: id});
 
     return {
       message: 'Avaliação deletada com sucesso!'

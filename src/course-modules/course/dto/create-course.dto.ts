@@ -16,6 +16,8 @@ export class CreateCourseDto {
     })
     title: string;
 
+    //--
+    
     @IsNotEmpty({
         message: 'A descrição do curso não pode estar vazio!'
     })
@@ -23,9 +25,11 @@ export class CreateCourseDto {
         message: 'A descrição do curso deve ser uma string!'
     })
     @MinLength(10, {
-        message: 'O tamanho mínimo do descrição do curso é 2 caracteres!'
+        message: 'O tamanho mínimo do descrição do curso é 10 caracteres!'
     })
     description?: string;
+
+    //--
 
     @IsNotEmpty({
         message: 'O nível de dificuldade do curso não pode estar vazio!'
@@ -41,21 +45,7 @@ export class CreateCourseDto {
     })
     difficulty_level: string;
 
-    /*
-    @IsNotEmpty({
-        message: 'O ID do professor do curso não pode estar vazio!'
-    })
-    @IsString({
-        message: 'O ID do professor do curso deve ser uma string!'
-    })
-    @MinLength(2, {
-        message: 'O tamanho mínimo do ID do professor do curso é 2 caracteres!'
-    })
-    @MaxLength(255, {
-        message: 'O tamanho máximo do ID do professor do curso é 255 caracteres!'
-    })
-    id_teacher: string;
-    */
+    //--
 
     @IsNotEmpty({
         message: 'O ID da categoria do curso não pode estar vazia!'
