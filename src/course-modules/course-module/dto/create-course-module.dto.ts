@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, MaxLength, MinLength } from "class-validator";
+import { IsNotEmpty, IsNumber, IsString, MaxLength, Min, MinLength } from "class-validator";
 
 export class CreateCourseModuleDto {
 
@@ -38,6 +38,9 @@ export class CreateCourseModuleDto {
     @IsNumber({
         maxDecimalPlaces: 0
     })
+    @Min(1, {
+                message: 'A ordem do episódio deve ser um número inteiro positivo!'
+            })
     order: number;
 
     //--
