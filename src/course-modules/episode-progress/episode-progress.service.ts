@@ -4,7 +4,7 @@ import { UpdateEpisodeProgressDto } from './dto/update-episode-progress.dto';
 
 @Injectable()
 export class EpisodeProgressService {
-  create(createEpisodeProgressDto: CreateEpisodeProgressDto) {
+  createEpisodeProgress(createEpisodeProgressDto: CreateEpisodeProgressDto) {
     return 'This action adds a new episodeProgress';
   }
 

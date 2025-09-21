@@ -9,7 +9,7 @@ export class EpisodeProgressController {
 
   @Post()
   create(@Body() createEpisodeProgressDto: CreateEpisodeProgressDto) {
-    return this.episodeProgressService.create(createEpisodeProgressDto);
+    return this.episodeProgressService.createEpisodeProgress(createEpisodeProgressDto);
   }
 
   @Get()
