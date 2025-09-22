@@ -118,7 +118,7 @@ export class ModuleEpisodeService {
     const teacher = await this.getTeacherFromCourseByModule(episode.fk_id_course_module);
 
     if (!teacher.teacherId) {
-      throw new NotFoundException('Módulo do curso não encontrado!');
+      throw new NotFoundException('Módulo do curso não encontrado 1 !');
     }
 
     if (teacher.teacherId !== userReq.sub && userReq.role !== 'admin') {
@@ -135,7 +135,7 @@ export class ModuleEpisodeService {
 
   }
 
-  async getTeacherFromCourseByModule(idModule: number) {
+  /*async getTeacherFromCourseByModule(idModule: number) {
 
     const teacher = await this.dataSource
       .getRepository(Course)
@@ -146,9 +146,24 @@ export class ModuleEpisodeService {
       .where('me.fk_id_course_module = :idModule', { idModule })
       .getRawOne();
 
+      console.log('teacher dentro da function: ' + JSON.stringify(teacher))
+
     return {
       teacherId: teacher?.fk_id_teacher ?? null
     }
+  }*/
+
+  async getTeacherFromCourseByModule(idModule: number) {
+    const teacher = await this.dataSource
+      .getRepository(CourseModule)
+      .createQueryBuilder('cm')
+      .innerJoin(Course, 'c', 'c.id_course = cm.fk_id_course')
+      .select('c.fk_id_teacher', 'fk_id_teacher')
+      .where('cm.id_course_module = :idModule', { idModule })
+      .getRawOne();
+
+    // se nada for encontrado, teacher será undefined
+    return { teacherId: teacher?.fk_id_teacher ?? null };
   }
 
   async validateOrderExistsInEpisode(order: number, idModule: number) {

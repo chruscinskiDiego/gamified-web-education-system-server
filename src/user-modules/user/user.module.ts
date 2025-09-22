@@ -16,5 +16,6 @@ import { AmazonS3Module } from 'src/external-tools/amazon-s3/amazon-s3.module';
   ],
   controllers: [UserController],
   providers: [UserService],
+  exports: [UserService]
 })
 export class UserModule {}
