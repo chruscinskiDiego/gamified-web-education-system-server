@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -81,7 +81,7 @@ export class CourseService {
     }
 
     if (!course.active) {
-      throw new ForbiddenException('Esse curso já está desativado!');
+      throw new ConflictException('Esse curso já está desativado!');
     }
 
     await this.courseRepository.save(course);

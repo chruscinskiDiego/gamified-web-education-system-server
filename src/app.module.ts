@@ -12,6 +12,7 @@ import { AvaliationModule } from './course-modules/avaliation/avaliation.module'
 import { CourseModuleModule } from './course-modules/course-module/course-module.module';
 import { ModuleEpisodeModule } from './course-modules/module-episode/module-episode.module';
 import { EpisodeProgressModule } from './course-modules/episode-progress/episode-progress.module';
+import { CourseRegistrationModule } from './course-modules/course-registration/course-registration.module';
 
 @Module({
   imports: [
@@ -38,7 +39,8 @@ import { EpisodeProgressModule } from './course-modules/episode-progress/episode
     AvaliationModule,
     CourseModuleModule,
     ModuleEpisodeModule,
-    EpisodeProgressModule
+    EpisodeProgressModule,
+    CourseRegistrationModule
   ],
   controllers: [AppController],
   providers: [AppService],
