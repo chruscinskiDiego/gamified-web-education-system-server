@@ -13,6 +13,8 @@ import { CourseModuleModule } from './course-modules/course-module/course-module
 import { ModuleEpisodeModule } from './course-modules/module-episode/module-episode.module';
 import { EpisodeProgressModule } from './course-modules/episode-progress/episode-progress.module';
 import { CourseRegistrationModule } from './course-modules/course-registration/course-registration.module';
+import { InsigniaModule } from './gamification-modules/insignia/insignia.module';
+
 
 @Module({
   imports: [
@@ -40,7 +42,8 @@ import { CourseRegistrationModule } from './course-modules/course-registration/c
     CourseModuleModule,
     ModuleEpisodeModule,
     EpisodeProgressModule,
-    CourseRegistrationModule
+    CourseRegistrationModule,
+    InsigniaModule
   ],
   controllers: [AppController],
   providers: [AppService],
