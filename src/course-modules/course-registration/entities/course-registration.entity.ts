@@ -8,7 +8,7 @@ export class CourseRegistration {
     @PrimaryGeneratedColumn()
     id_course_registration: number;
 
-    @Column({type: 'char', length: 255, nullable: false})
+    @Column({type: 'char', nullable: false})
     state: string;
 
     @CreateDateColumn({ type: 'timestamp', nullable: false})

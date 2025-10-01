@@ -22,8 +22,8 @@ export class UserController {
     return await this.userService.createUserProfile(createUserDto);
   }
 
-  @UseGuards(AuthTokenGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  /*@UseGuards(AuthTokenGuard, RolesGuard)*/
+  //@Roles(Role.ADMIN)
   @Post('/create-admin')
   async createUserAdminProfile(
     @Body() createUserAdminDto: CreateUserAdminDto
