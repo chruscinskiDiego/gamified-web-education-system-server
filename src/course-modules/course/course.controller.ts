@@ -11,7 +11,7 @@ import { Role } from 'src/user-modules/roles/enum/roles.enum';
 
 @Controller('course')
 export class CourseController {
-  constructor(private readonly courseService: CourseService) {}
+  constructor(private readonly courseService: CourseService) { }
 
   @UseGuards(AuthTokenGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)
@@ -27,7 +27,7 @@ export class CourseController {
   @Roles(Role.ADMIN, Role.TEACHER)
   @Patch('/update/:id')
   async update(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Body() updateCourseDto: UpdateCourseDto,
     @JwtUserReqParam() userReq: TokenPayloadDto,
   ) {
@@ -43,5 +43,14 @@ export class CourseController {
     @JwtUserReqParam() userReq: TokenPayloadDto,
   ) {
     return this.courseService.disableCourseById(id, userReq);
+  }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.TEACHER)
+  @Get('/view-by-teacher')
+  async getCoursesByTeacher(
+    @JwtUserReqParam() userReq: TokenPayloadDto
+  ) {
+    return this.courseService.getCoursesByTeacher(userReq.sub);
   }
 }

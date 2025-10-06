@@ -92,4 +92,34 @@ export class CourseService {
     }
 
   }
+
+  async getCoursesByTeacher(id: string) {
+
+    const courses = await this.courseRepository.query(
+      `
+      SELECT
+        c.id_course,
+        c.title,
+        c.description,
+        c.link_thumbnail,
+        c.difficulty_level,
+        COUNT(cm.id_course_module) AS module_count
+      FROM 
+        course c
+      LEFT JOIN 
+        course_module cm 
+        ON c.id_course = cm.fk_id_course
+      WHERE c.fk_id_teacher = '${id}'
+      GROUP BY 
+        c.id_course, 
+        c.title, 
+        c.description, 
+        c.link_thumbnail, 
+        c.difficulty_level;
+      `
+    );
+
+    return courses || [];
+
+  }
 }

@@ -43,10 +43,13 @@ export class UserService {
 
       const createdUser = await this.userRepository.save(user);
 
-      const createdStarterXp = await this.userXpService.createStarterUserXpByUserId(createdUser.id_user);
+      if (user.type === 'S') {
+        const createdStarterXp = await this.userXpService.createStarterUserXpByUserId(createdUser.id_user);
 
-      if (!createdStarterXp) {
-        throw new ConflictException(`XP já criado para o ID de usuário: ${createdUser.id_user}`);
+        if (!createdStarterXp) {
+          throw new ConflictException(`XP já criado para o ID de usuário: ${createdUser.id_user}`);
+        }
+
       }
 
       return {
@@ -113,11 +116,11 @@ export class UserService {
 
   async setUserProfilePicture(id: string, file: Express.Multer.File, sub: string) {
 
-    if(sub !== id){
+    if (sub !== id) {
       throw new UnauthorizedException(`Você não tem permissão para alterar a foto de perfil de outro usuário.`);
     }
 
-    try{
+    try {
 
       const imageUrl: string = await this.amazonS3Service.uploadProfilePicture(file, id);
 
@@ -130,16 +133,16 @@ export class UserService {
         profile_picture_link: imageUrl
       }
 
-    }catch(error){
+    } catch (error) {
 
       throw error;
-      
+
     }
   }
 
   async findUserProfileById(id: string, jwtUserReq: TokenPayloadDto) {
 
-    if((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')){
+    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')) {
       throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
     }
 
@@ -166,7 +169,7 @@ export class UserService {
 
   async updateUserProfileById(id: string, updateUserDto: UpdateUserDto, jwtUserReq: TokenPayloadDto) {
 
-    if((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')){
+    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')) {
       throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
     }
 
@@ -190,7 +193,7 @@ export class UserService {
 
   async disableUserProfileById(id: string, jwtUserReq: TokenPayloadDto) {
 
-    if((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')){
+    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')) {
       throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
     }
 
@@ -209,8 +212,8 @@ export class UserService {
       throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
     }
 
-    if( !user.active) {
-      throw new ConflictException(`Usuário com ID ${id} já está desativado`); 
+    if (!user.active) {
+      throw new ConflictException(`Usuário com ID ${id} já está desativado`);
     }
 
     await this.userRepository.update(id, {

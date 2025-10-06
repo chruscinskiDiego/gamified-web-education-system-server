@@ -21,23 +21,20 @@ export class AuthService {
     ) { }
 
     async login(loginDTO: LoginDTO) {
-
-        let passwordIsValid = false;
-
-        const user = await this.userRepository.findOneBy({
-            email: loginDTO.email
+        const user = await this.userRepository.findOne({
+            where: { email: loginDTO.email },
         });
 
-        if (user) {
-            passwordIsValid = await this.hashingService.compare(
-                loginDTO.password,
-                user.password
-            );
+        if (!user) {
+            throw new UnauthorizedException('Email ou senha inválidos!');
+        }
 
-            passwordIsValid = true;
-        };
+        const passwordIsValid = await this.hashingService.compare(
+            loginDTO.password,
+            user.password
+        );
 
-        if (!user || !passwordIsValid) {
+        if (!passwordIsValid) {
             throw new UnauthorizedException('Email ou senha inválidos!');
         }
 
@@ -58,6 +55,9 @@ export class AuthService {
         return {
             access_token: accessToken,
             user_id: user.id_user,
-        }
+            user_type: user.type,
+            ...(user.profile_picture_link && { user_profile_pic: user.profile_picture_link })
+        };
     }
+
 }
