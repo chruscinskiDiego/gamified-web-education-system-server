@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe, UseInterceptors, BadRequestException, UploadedFile } from '@nestjs/common';
 import { ModuleEpisodeService } from './module-episode.service';
 import { CreateModuleEpisodeDto } from './dto/create-module-episode.dto';
 import { UpdateModuleEpisodeDto } from './dto/update-module-episode.dto';
@@ -8,6 +8,7 @@ import { AuthTokenGuard } from 'src/user-modules/auth/guards/auth-token.guard';
 import { RolesGuard } from 'src/user-modules/roles/guard/roles.guard';
 import { Roles } from 'src/user-modules/roles/decorator/roles.decorator';
 import { Role } from 'src/user-modules/roles/enum/roles.enum';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @UseGuards(AuthTokenGuard, RolesGuard)
 @Controller('module-episode')
@@ -45,7 +46,34 @@ export class ModuleEpisodeController {
   async deleteEpisodeById(
     @Param('id', ParseIntPipe) id: number,
     @JwtUserReqParam() userReq
-) {
+  ) {
     return this.moduleEpisodeService.deleteEpisodeById(id, userReq);
+  }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 200 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        const allowedImage = file.mimetype.startsWith('image/');
+        const allowedVideo = file.mimetype.startsWith('video/');
+        const allowedPdf = file.mimetype === 'application/pdf';
+
+        if (!allowedImage && !allowedVideo && !allowedPdf) {
+          cb(new BadRequestException('Apenas arquivos de imagem, vídeo ou PDF são permitidos.'), false);
+        } else {
+          cb(null, true);
+        }
+      },
+    }),
+  )
+  @Post('/set-media/:id')
+  async setEpisodeMedia(
+    @Param('id', ParseIntPipe) id: number,
+    @JwtUserReqParam() userReq: TokenPayloadDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.moduleEpisodeService.setEpisodeMedia(id, userReq, file)
   }
 }

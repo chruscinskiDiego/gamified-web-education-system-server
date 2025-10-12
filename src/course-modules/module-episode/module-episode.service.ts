@@ -7,6 +7,7 @@ import { DataSource, Repository } from 'typeorm';
 import { Course } from '../course/entities/course.entity';
 import { CourseModule } from '../course-module/entities/course-module.entity';
 import { TokenPayloadDto } from 'src/user-modules/auth/dto/token-payload.dto';
+import { AmazonS3Service } from 'src/external-tools/amazon-s3/amazon-s3.service';
 
 @Injectable()
 export class ModuleEpisodeService {
@@ -14,8 +15,11 @@ export class ModuleEpisodeService {
   constructor(
     @InjectRepository(ModuleEpisode)
     private readonly moduleEpisodeRepository: Repository<ModuleEpisode>,
+
     @InjectDataSource()
     private readonly dataSource: DataSource,
+
+    private readonly amazonS3Service: AmazonS3Service
   ) { }
 
   async createEpisodeInModule(createModuleEpisodeDto: CreateModuleEpisodeDto, userReq: TokenPayloadDto) {
@@ -206,5 +210,37 @@ export class ModuleEpisodeService {
       }
     }
 
+  }
+
+  async setEpisodeMedia(id: number, userReq: TokenPayloadDto, file: Express.Multer.File) {
+
+    try {
+
+      const episode = await this.moduleEpisodeRepository.findOne({
+        where: {
+          id_module_episode: id
+        }
+      });
+
+      if (!episode) throw new NotFoundException("Episódio não encontrado!");
+
+      const module = episode.fk_id_course_module;
+
+      const mediaUrl = await this.amazonS3Service.uploadEpisodeMedia(file, module, id);
+
+      await this.moduleEpisodeRepository.update(id, {
+        link_episode: mediaUrl
+      });
+
+      return {
+        message: 'Mídia inserida com sucesso!',
+        media_url: mediaUrl
+      }
+
+    } catch (error) {
+
+      throw error;
+
+    }
   }
 }

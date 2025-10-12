@@ -4,10 +4,10 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 @Injectable()
 export class AmazonS3Service {
 
-    constructor(){}
+    constructor() { }
 
 
-     private readonly s3 = new S3Client({
+    private readonly s3 = new S3Client({
         region: process.env.AWS_REGION,
         credentials: {
             accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
@@ -15,7 +15,7 @@ export class AmazonS3Service {
         },
     });
 
-    async uploadProfilePicture(file: Express.Multer.File, profileId: string){
+    async uploadProfilePicture(file: Express.Multer.File, profileId: string) {
 
         const bucket = process.env.S3_BUCKET_NAME!;
 
@@ -33,7 +33,7 @@ export class AmazonS3Service {
         return imageLink;
     }
 
-    async uploadCoursePicture(file: Express.Multer.File, courseId: string){
+    async uploadCoursePicture(file: Express.Multer.File, courseId: string) {
 
         const bucket = process.env.S3_BUCKET_NAME!;
 
@@ -49,5 +49,23 @@ export class AmazonS3Service {
         const imageLink = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
 
         return imageLink;
+    }
+
+    async uploadEpisodeMedia(file: Express.Multer.File, moduleId: number, episodeId: number) {
+
+        const bucket = process.env.S3_BUCKET_NAME!;
+
+        const key = `courses/module/${moduleId}/ep/${episodeId}`;
+
+        await this.s3.send(new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+        }));
+
+        const returnLink = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+        return returnLink;
     }
 }
