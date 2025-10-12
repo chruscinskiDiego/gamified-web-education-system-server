@@ -32,4 +32,22 @@ export class AmazonS3Service {
 
         return imageLink;
     }
+
+    async uploadCoursePicture(file: Express.Multer.File, courseId: string){
+
+        const bucket = process.env.S3_BUCKET_NAME!;
+
+        const key = `/courses/thumbnail/${courseId}`;
+
+        await this.s3.send(new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            Body: file.buffer,
+            ContentType: file.mimetype,
+        }));
+
+        const imageLink = `https://${bucket}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
+        return imageLink;
+    }
 }

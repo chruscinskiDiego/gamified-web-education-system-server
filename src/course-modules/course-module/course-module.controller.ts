@@ -33,6 +33,15 @@ export class CourseModuleController {
 
   @UseGuards(AuthTokenGuard, RolesGuard)
   @Roles(Role.ADMIN, Role.TEACHER)
+  @Get('/management-view/:id')
+  async getManagementModuleById(
+    @Param('id', ParseIntPipe) id: number
+  ) {
+    return this.courseModuleService.getManagementCourseModuleById(id);
+  }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Patch('/update/:id')
   async updateModuleById(
     @Param('id', ParseIntPipe) id: number,

@@ -20,7 +20,7 @@ export class CategoryController {
     return this.categoryService.createCategory(createCategoryDto);
   }
 
-  @Roles(Role.ADMIN)
+  @Roles(Role.ADMIN, Role.TEACHER)
   @Get('/view-all')
   async findAllCategories() {
     return this.categoryService.findAllCategories();
@@ -42,4 +42,5 @@ export class CategoryController {
   ) {
     return this.categoryService.disableCategoryById(+id);
   }
+  
 }

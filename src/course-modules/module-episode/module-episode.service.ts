@@ -92,7 +92,7 @@ export class ModuleEpisodeService {
     }
 
 
-    await this.validateOrderAndTeacher(updateEpisodeDTO, userReq);
+    await this.validateOrderAndTeacher(updateEpisodeDTO, userReq, 'update');
 
     await this.moduleEpisodeRepository.save(episode);
 
@@ -186,7 +186,7 @@ export class ModuleEpisodeService {
 
   }
 
-  async validateOrderAndTeacher(episode: CreateModuleEpisodeDto, userReq: TokenPayloadDto) {
+  async validateOrderAndTeacher(episode: CreateModuleEpisodeDto, userReq: TokenPayloadDto, type = 'create') {
 
     const teacher = await this.getTeacherFromCourseByModule(episode.id_course_module);
 
@@ -198,10 +198,13 @@ export class ModuleEpisodeService {
       throw new ForbiddenException('Você não tem permissão para adicionar episódios nesse módulo!');
     }
 
-    const orderExists = await this.validateOrderExistsInEpisode(episode.order, episode.id_course_module);
+    if (type === 'create') {
+      const orderExists = await this.validateOrderExistsInEpisode(episode.order, episode.id_course_module);
 
-    if (orderExists) {
-      throw new ConflictException('Já existe um episódio com essa ordem nesse módulo!');
+      if (orderExists) {
+        throw new ConflictException('Já existe um episódio com essa ordem nesse módulo!');
+      }
     }
+
   }
 }

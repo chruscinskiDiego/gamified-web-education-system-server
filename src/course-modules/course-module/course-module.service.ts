@@ -19,20 +19,20 @@ export class CourseModuleService {
   ) { }
 
   async createModuleInCourse(createCourseModuleDto: CreateCourseModuleDto, userReq: TokenPayloadDto) {
-    
+
     const { id_course, ...module } = createCourseModuleDto;
 
     const courseValidation = await this.validateCourseAndOwner(id_course, userReq);
 
     if (!courseValidation.isValid) {
-      
+
       throw new ForbiddenException(courseValidation.message);
 
     }
 
     const orderExists = await this.validateOrderExistsInCourse(module.order, id_course);
 
-    if(orderExists){
+    if (orderExists) {
       throw new ConflictException('Já existe um módulo com essa ordem nesse curso!');
     }
 
@@ -41,7 +41,7 @@ export class CourseModuleService {
       ...module
     }
 
-    try{
+    try {
 
       const module = await this.courseModuleRepository.create(moduleDTO);
 
@@ -57,14 +57,59 @@ export class CourseModuleService {
         throw new NotFoundException('Curso não encontrado!');
       }
 
-      if(error.code === '22P02'){
+      if (error.code === '22P02') {
         throw new NotFoundException('ID do curso inválido!');
       }
 
       throw error;
     }
   }
-  
+
+  async getManagementCourseModuleById(moduleId: number) {
+
+    try {
+
+      const courseModuleWithEpisodes = await this.courseModuleRepository.query(
+        `
+          SELECT
+          cm.id_course_module,
+          cm.title,
+          cm.description,
+          cm.created_at,
+          COALESCE(
+            jsonb_agg(
+              jsonb_build_object(
+                'id_module_episode', me.id_module_episode ,
+                'title', me.title,
+                'description', me.description,
+                'order', me."order",
+                'link_episode', me.link_episode,
+                'created_at', me.created_at
+              )
+              ORDER BY me.id_module_episode 
+            ) FILTER (WHERE me.id_module_episode IS NOT NULL),
+            '[]'::jsonb
+          ) AS module_episodes
+        FROM course_module cm
+        LEFT JOIN module_episode me ON cm.id_course_module = me.fk_id_course_module 
+        WHERE cm.id_course_module = ${moduleId}
+        GROUP BY
+          cm.id_course_module,
+          cm.title,
+          cm.description,
+          cm.created_at
+        `
+      );
+
+      return courseModuleWithEpisodes ? courseModuleWithEpisodes[0] : [];
+
+    } catch (error) {
+
+      throw error;
+
+    }
+  }
+
 
   async findAllModulesByCourseId(courseId: string) {
 
@@ -91,7 +136,7 @@ export class CourseModuleService {
 
 
   async updateModuleById(id: number, updateCourseModuleDto: UpdateCourseModuleDto, userReq: TokenPayloadDto) {
-    
+
     const module = await this.courseModuleRepository.preload({
       id_course_module: id,
       ...updateCourseModuleDto
@@ -104,14 +149,14 @@ export class CourseModuleService {
     const courseValidation = await this.validateCourseAndOwner(module.fk_id_course, userReq);
 
     if (!courseValidation.isValid) {
-      
+
       throw new ForbiddenException(courseValidation.message);
 
     }
 
     const orderExists = await this.validateOrderExistsInCourse(module.order, module.fk_id_course);
 
-    if(orderExists){
+    if (orderExists) {
       throw new ConflictException('Já existe um módulo com essa ordem nesse curso!');
     }
 
@@ -124,7 +169,7 @@ export class CourseModuleService {
   }
 
   async deleteModuleById(id: number, userReq: TokenPayloadDto) {
-    
+
     const moduleExists = await this.courseModuleRepository.findOne({
       where: {
         id_course_module: id
@@ -135,24 +180,24 @@ export class CourseModuleService {
       }
     });
 
-    if(!moduleExists){
+    if (!moduleExists) {
       throw new NotFoundException('Módulo não encontrado!');
     }
 
     const courseValidation = await this.validateCourseAndOwner(moduleExists?.fk_id_course as string, userReq);
 
-    if(!courseValidation.isValid) {
-      
+    if (!courseValidation.isValid) {
+
       throw new ForbiddenException(courseValidation.message);
-    
+
     }
 
-    await this.courseModuleRepository.delete({id_course_module: id});
+    await this.courseModuleRepository.delete({ id_course_module: id });
 
     return {
       message: 'Módulo deletado com sucesso!'
     }
-7
+  
   }
 
   //utils
@@ -168,7 +213,7 @@ export class CourseModuleService {
       }
     });
 
-    if (!course){
+    if (!course) {
 
       return {
         isValid: false,
