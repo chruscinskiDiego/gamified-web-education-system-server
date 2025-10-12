@@ -222,7 +222,88 @@ export class CourseService {
 
     if (!course) throw new NotFoundException('Curso não encontrado!');
 
-    if ((course.fk_id_teacher !==  userReq.sub) && userReq.role !== 'admin') throw new ForbiddenException("Você não tem permissão para alterar esse curso!");
+    if ((course.fk_id_teacher !== userReq.sub) && userReq.role !== 'admin') throw new ForbiddenException("Você não tem permissão para alterar esse curso!");
+
+  }
+
+  async getRegisteredAndHighlightedCoursesByUserId(userId: string) {
+
+    const courses = await this.courseRepository.query(
+      `
+          WITH registered AS (
+      SELECT
+        c.id_course,
+        c.title,
+        c.difficulty_level,
+        c.link_thumbnail,
+        ROUND(AVG(a.note)::numeric, 2) AS avaliation_average
+      FROM course c
+      JOIN course_registration cr
+        ON c.id_course = cr.fk_id_course
+      LEFT JOIN avaliation a
+        ON c.id_course = a.fk_id_course
+      WHERE cr.fk_id_student = '${userId}'
+      GROUP BY c.id_course, c.title, c.difficulty_level, c.link_thumbnail
+    ),
+    registered_json AS (
+      SELECT COALESCE(
+        jsonb_agg(
+          jsonb_build_object(
+            'id_course', id_course,
+            'title', title,
+            'difficulty_level', difficulty_level,
+            'link_thumbnail', link_thumbnail,
+            'avaliation_average', avaliation_average
+          )
+          ORDER BY id_course
+        ),
+        '[]'::jsonb
+      ) AS arr
+      FROM registered
+    ),
+    all_courses AS (
+      SELECT
+        c.id_course,
+        c.title,
+        c.difficulty_level,
+        c.link_thumbnail,
+        ROUND(AVG(a.note)::numeric, 2) AS avaliation_average
+      FROM course c
+      LEFT JOIN avaliation a
+        ON c.id_course = a.fk_id_course
+      GROUP BY c.id_course, c.title, c.difficulty_level, c.link_thumbnail
+    ),
+    top12 AS (
+      SELECT *
+      FROM all_courses
+      ORDER BY avaliation_average DESC NULLS LAST, id_course
+      LIMIT 12
+    ),
+    top12_json AS (
+      SELECT COALESCE(
+        jsonb_agg(
+          jsonb_build_object(
+            'id_course', id_course,
+            'title', title,
+            'difficulty_level', difficulty_level,
+            'link_thumbnail', link_thumbnail,
+            'avaliation_average', avaliation_average
+          )
+          ORDER BY avaliation_average DESC NULLS LAST, id_course
+        ),
+        '[]'::jsonb
+      ) AS arr
+      FROM top12
+    )
+    SELECT jsonb_build_object(
+      'registered_courses', registered_json.arr,
+      'highlighted_courses', top12_json.arr
+    ) AS result
+    FROM registered_json, top12_json;
+      `
+    );
+
+    return courses[0].result;
 
   }
 }

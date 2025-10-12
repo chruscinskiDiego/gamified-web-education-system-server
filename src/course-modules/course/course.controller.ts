@@ -99,4 +99,15 @@ export class CourseController {
     return this.courseService.getManagementCourseById(id, userReq);
 
   }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.STUDENT)
+  @Get('/registered-and-highlighted')
+  async etRegisteredAndHighlightedCoursesByUserId(
+    @JwtUserReqParam() userReq: TokenPayloadDto
+  ) {
+
+    return this.courseService.getRegisteredAndHighlightedCoursesByUserId(userReq.sub);
+
+  }
 }
