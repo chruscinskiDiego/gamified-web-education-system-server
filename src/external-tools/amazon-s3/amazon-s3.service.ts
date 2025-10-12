@@ -19,7 +19,7 @@ export class AmazonS3Service {
 
         const bucket = process.env.S3_BUCKET_NAME!;
 
-        const key = `/user-profile-pictures/${profileId}`;
+        const key = `user-profile-pictures/${profileId}`;
 
         await this.s3.send(new PutObjectCommand({
             Bucket: bucket,
@@ -37,7 +37,7 @@ export class AmazonS3Service {
 
         const bucket = process.env.S3_BUCKET_NAME!;
 
-        const key = `/courses/thumbnail/${courseId}`;
+        const key = `courses/thumbnail/${courseId}`;
 
         await this.s3.send(new PutObjectCommand({
             Bucket: bucket,
