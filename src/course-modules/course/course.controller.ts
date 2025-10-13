@@ -110,4 +110,16 @@ export class CourseController {
     return this.courseService.getRegisteredAndHighlightedCoursesByUserId(userReq.sub);
 
   }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.STUDENT)
+  @Get('/resume/:id')
+  async getResumeOfCourseById(
+    @Param('id') id: string,
+    @JwtUserReqParam() userReq: TokenPayloadDto
+  ) {
+
+    return this.courseService.getResumeOfCourseById(id, userReq.sub);
+
+  }
 }

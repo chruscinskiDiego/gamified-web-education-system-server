@@ -306,4 +306,51 @@ export class CourseService {
     return courses[0].result;
 
   }
+
+  async getResumeOfCourseById(courseId: string, studentId: string){
+
+    const course = await this.courseRepository.query(
+      `
+      SELECT 
+          c.id_course,
+          c.title,
+          c.description,
+          c.link_thumbnail,
+          c.difficulty_level,
+          c.created_at,
+          cr.state AS registration_state,
+          (COALESCE(t.name, '') || ' ' || COALESCE(t.surname, '')) AS teacher_full_name,
+          ca."name" AS category,
+          COUNT(cm.id_course_module) AS modules_count
+      FROM course c
+      LEFT JOIN course_registration cr
+          ON c.id_course = cr.fk_id_course 
+          AND cr.fk_id_student = '${studentId}'
+      LEFT JOIN "user" s   -- student
+          ON cr.fk_id_student = s.id_user
+      LEFT JOIN "user" t   -- teacher
+          ON c.fk_id_teacher = t.id_user
+      LEFT JOIN category ca
+          ON c.fk_id_category = ca.id_category 
+      LEFT JOIN course_module cm 
+          ON c.id_course = cm.fk_id_course 
+      WHERE c.id_course = '${courseId}'
+      GROUP BY 
+          c.id_course,
+          c.title,
+          c.description,
+          c.link_thumbnail,
+          c.difficulty_level,
+          c.created_at,
+          cr.state,
+          t.name,
+          t.surname,
+          ca."name";
+      `
+    );
+
+    return course[0];
+  };
+
+
 }
