@@ -1,10 +1,10 @@
 import { Course } from "src/course-modules/course/entities/course.entity";
 import { User } from "src/user-modules/user/entities/user.entity";
-import { Column, Entity, Index, JoinColumn, ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 @Index(['fk_id_course', 'fk_id_student'], { unique: true })
-export class Avaliation {
+export class DidaticsAvaliation {
 
     @PrimaryGeneratedColumn()
     id_avaliation: number;

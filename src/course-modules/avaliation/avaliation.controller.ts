@@ -5,8 +5,13 @@ import { UpdateAvaliationDto } from './dto/update-avaliation.dto';
 import { AuthTokenGuard } from 'src/user-modules/auth/guards/auth-token.guard';
 import { JwtUserReqParam } from 'src/user-modules/auth/params/token-payload.params';
 import { TokenPayloadDto } from 'src/user-modules/auth/dto/token-payload.dto';
+import { RolesGuard } from 'src/user-modules/roles/guard/roles.guard';
+import { Roles } from 'src/user-modules/roles/decorator/roles.decorator';
+import { Role } from 'src/user-modules/roles/enum/roles.enum';
+import { DeleteAvaliationDto } from './dto/delete-avaliation.dto';
 
-@UseGuards(AuthTokenGuard)
+@UseGuards(AuthTokenGuard, RolesGuard)
+@Roles(Role.ADMIN, Role.STUDENT)
 @Controller('avaliation')
 export class AvaliationController {
   constructor(private readonly avaliationService: AvaliationService) {}
@@ -21,12 +26,19 @@ export class AvaliationController {
 
   }
 
+  @Patch('/update')
+  async updateAvaliation(
+    @Body() updateAvaliationDto: UpdateAvaliationDto,
+    @JwtUserReqParam() userReq: TokenPayloadDto,
+  ){
+    return this.avaliationService.updateAvaliations(updateAvaliationDto, userReq);
+  }
 
-  @Delete('/delete-by-id/:id')
-  async deleteAvaliationById(
-    @Param('id', ParseIntPipe) id: number,
+  @Delete('/delete')
+  async deleteAvaliation(
+    @Body() deleteAvaliationDto: DeleteAvaliationDto,
     @JwtUserReqParam() userReq: TokenPayloadDto,
   ) {
-    return this.avaliationService.deleteAvaliationById(id, userReq);
+    return this.avaliationService.deleteAvaliation(deleteAvaliationDto, userReq);
   }
 }
