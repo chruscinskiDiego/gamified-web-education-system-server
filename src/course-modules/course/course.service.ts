@@ -311,41 +311,133 @@ export class CourseService {
 
     const course = await this.courseRepository.query(
       `
-      SELECT 
-          c.id_course,
-          c.title,
-          c.description,
-          c.link_thumbnail,
-          c.difficulty_level,
-          c.created_at,
-          cr.state AS registration_state,
-          (COALESCE(t.name, '') || ' ' || COALESCE(t.surname, '')) AS teacher_full_name,
-          ca."name" AS category,
-          COUNT(cm.id_course_module) AS modules_count
+      SELECT
+        c.id_course,
+        c.title,
+        c.description,
+        c.link_thumbnail,
+        c.difficulty_level,
+        c.created_at,
+        teach.name || ' ' || teach.surname as teacher_full_name,
+        teach.profile_picture_link as teacher_profile_picture,
+
+        /* estado de matrícula do aluno fixo */
+        cr.state AS registration_state,
+
+        /* contagem de módulos */
+        (
+          SELECT COUNT(*) FROM course_module cm
+          WHERE cm.fk_id_course = c.id_course
+        ) AS modules_count,
+
+        /* média geral (3 dimensões) + contagem total */
+        jsonb_build_object(
+          'avg',  ROUND(overall.avg_overall::numeric, 2),
+          'count', overall.cnt_overall
+        ) AS overall_rating,
+
+        /* se o aluno já avaliou (em qualquer dimensão ou comentário) */
+        (
+          EXISTS (SELECT 1 FROM material_quality_avaliation mq
+                  WHERE mq.fk_id_course = c.id_course AND mq.fk_id_student = '${studentId}')
+          OR EXISTS (SELECT 1 FROM didatics_avaliation da
+                    WHERE da.fk_id_course = c.id_course AND da.fk_id_student = '${studentId}')
+          OR EXISTS (SELECT 1 FROM teaching_methodology_avaliation tm
+                    WHERE tm.fk_id_course = c.id_course AND tm.fk_id_student = '${studentId}')
+          OR EXISTS (SELECT 1 FROM commentary_avaliation ca
+                    WHERE ca.fk_id_course = c.id_course AND ca.fk_id_student = '${studentId}')
+        ) AS user_rated,
+
+        /* por usuário: média do usuário + última nota por tipo + comentário mais recente do aluno no curso */
+        per_user.evaluations_by_user
+
       FROM course c
       LEFT JOIN course_registration cr
-          ON c.id_course = cr.fk_id_course 
-          AND cr.fk_id_student = '${studentId}'
-      LEFT JOIN "user" s   -- student
-          ON cr.fk_id_student = s.id_user
-      LEFT JOIN "user" t   -- teacher
-          ON c.fk_id_teacher = t.id_user
-      LEFT JOIN category ca
-          ON c.fk_id_category = ca.id_category 
-      LEFT JOIN course_module cm 
-          ON c.id_course = cm.fk_id_course 
-      WHERE c.id_course = '${courseId}'
-      GROUP BY 
-          c.id_course,
-          c.title,
-          c.description,
-          c.link_thumbnail,
-          c.difficulty_level,
-          c.created_at,
-          cr.state,
-          t.name,
-          t.surname,
-          ca."name";
+        ON cr.fk_id_course = c.id_course
+      AND cr.fk_id_student = '${studentId}'
+      LEFT JOIN "user" teach
+        ON c.fk_id_teacher = teach.id_user
+
+      /* ---- OVERALL (média geral + contagem) ---- */
+      LEFT JOIN LATERAL (
+        SELECT AVG(u.note) AS avg_overall, COUNT(*) AS cnt_overall
+        FROM (
+          SELECT note FROM material_quality_avaliation     WHERE fk_id_course = c.id_course
+          UNION ALL
+          SELECT note FROM didatics_avaliation             WHERE fk_id_course = c.id_course
+          UNION ALL
+          SELECT note FROM teaching_methodology_avaliation WHERE fk_id_course = c.id_course
+        ) u
+      ) overall ON TRUE
+
+      /* ---- LISTA POR USUÁRIO (última por tipo via maior id_avaliation) + comentário do aluno ---- */
+      LEFT JOIN LATERAL (
+        WITH all_notes AS (
+          SELECT fk_id_student AS student_id, 'material_quality' AS kind, id_avaliation, note
+          FROM material_quality_avaliation WHERE fk_id_course = c.id_course
+          UNION ALL
+          SELECT fk_id_student, 'didatics', id_avaliation, note
+          FROM didatics_avaliation WHERE fk_id_course = c.id_course
+          UNION ALL
+          SELECT fk_id_student, 'teaching_methodology', id_avaliation, note
+          FROM teaching_methodology_avaliation WHERE fk_id_course = c.id_course
+        ),
+        latest_per_type AS (
+          SELECT DISTINCT ON (student_id, kind)
+            student_id, kind, id_avaliation, note
+          FROM all_notes
+          ORDER BY student_id, kind, id_avaliation DESC
+        ),
+        per_user_base AS (
+          SELECT
+            lpt.student_id,
+            ROUND(AVG(lpt.note)::numeric, 2) AS avg_user,
+            MAX(lpt.id_avaliation)          AS last_avaliation_id,
+            jsonb_object_agg(
+              lpt.kind,
+              jsonb_build_object(
+                'id_avaliation', lpt.id_avaliation,
+                'note',          lpt.note
+              )
+            ) AS notes_obj
+          FROM latest_per_type lpt
+          GROUP BY lpt.student_id
+        )
+        SELECT jsonb_agg(
+                jsonb_build_object(
+                  'student_id', u.id_user,
+                  'student_full_name', COALESCE(u.name,'') || ' ' || COALESCE(u.surname,''),
+                  'student_profile_picture', u.profile_picture_link,
+                  'avg',  pub.avg_user,
+                  'notes', pub.notes_obj,
+                  'last_avaliation_id', pub.last_avaliation_id,
+                  'commentary',
+                    CASE WHEN uc.id_avaliation IS NOT NULL
+                          THEN jsonb_build_object(
+                                'id_avaliation', uc.id_avaliation,
+                                'comment',       uc.commentary
+                              )
+                          ELSE NULL
+                    END
+                )
+                ORDER BY pub.last_avaliation_id DESC
+              ) AS evaluations_by_user
+        FROM per_user_base pub
+        JOIN "user" u ON u.id_user = pub.student_id
+
+        /* pega o ÚLTIMO comentário desse aluno para este curso */
+        LEFT JOIN LATERAL (
+          SELECT ca.id_avaliation, ca.commentary
+          FROM commentary_avaliation ca
+          WHERE ca.fk_id_course = c.id_course
+            AND ca.fk_id_student = u.id_user
+          ORDER BY ca.id_avaliation DESC   -- se tiver created_at, prefira ORDER BY created_at DESC
+          LIMIT 1
+        ) uc ON TRUE
+      ) per_user ON TRUE
+
+      WHERE c.id_course = '${courseId}';
+
       `
     );
 
