@@ -16,6 +16,7 @@ import { CourseRegistrationModule } from './course-modules/course-registration/c
 import { InsigniaModule } from './gamification-modules/insignia/insignia.module';
 import { ChallengeModule } from './gamification-modules/challenge/challenge.module';
 import { ChallengeUserProgressModule } from './gamification-modules/challenge-user-progress/challenge-user-progress.module';
+import { GoalModule } from './gamification-modules/goal/goal.module';
 
 
 @Module({
@@ -47,7 +48,8 @@ import { ChallengeUserProgressModule } from './gamification-modules/challenge-us
     CourseRegistrationModule,
     InsigniaModule,
     ChallengeModule,
-    ChallengeUserProgressModule
+    ChallengeUserProgressModule,
+    GoalModule
   ],
   controllers: [AppController],
   providers: [AppService],
