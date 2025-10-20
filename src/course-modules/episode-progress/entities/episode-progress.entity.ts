@@ -1,6 +1,6 @@
 import { ModuleEpisode } from "src/course-modules/module-episode/entities/module-episode.entity";
 import { User } from "src/user-modules/user/entities/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from "typeorm";
 
 @Entity()
 export class EpisodeProgress {
@@ -11,7 +11,7 @@ export class EpisodeProgress {
     @Column({type: 'boolean', nullable: false})
     completed: boolean;
 
-    @Column({type: 'timestamp', nullable: false})
+    @CreateDateColumn({type: 'timestamp', nullable: false})
     completed_at: number;
 
     @Column({type: 'int', nullable: false})

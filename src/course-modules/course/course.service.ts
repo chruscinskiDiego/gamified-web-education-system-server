@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,6 +6,7 @@ import { Course } from './entities/course.entity';
 import { Repository } from 'typeorm';
 import { TokenPayloadDto } from 'src/user-modules/auth/dto/token-payload.dto';
 import { AmazonS3Service } from 'src/external-tools/amazon-s3/amazon-s3.service';
+import { CourseRegistration } from '../course-registration/entities/course-registration.entity';
 
 @Injectable()
 export class CourseService {
@@ -13,6 +14,9 @@ export class CourseService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
+
+    @InjectRepository(CourseRegistration)
+    private readonly courseRegistrationRepository: Repository<CourseRegistration>,
 
     private readonly amazonS3Service: AmazonS3Service
   ) { }
@@ -307,7 +311,7 @@ export class CourseService {
 
   }
 
-  async getResumeOfCourseById(courseId: string, studentId: string){
+  async getResumeOfCourseById(courseId: string, studentId: string) {
 
     const course = await this.courseRepository.query(
       `
@@ -443,6 +447,91 @@ export class CourseService {
 
     return course[0];
   };
+
+  async getCourseDataAndProgressByCourseIdAndStudentId(
+    courseId: string,
+    studentId: string,
+  ) {
+    const sql = `
+      SELECT jsonb_build_object(
+        'id_course',       c.id_course,
+        'title',           c.title,
+        'description',     c.description,
+        'difficulty_level',c.difficulty_level,
+        'modules',         COALESCE(mods.modules, '[]'::jsonb)
+      ) AS course_json
+      FROM course c
+      LEFT JOIN LATERAL (
+        SELECT jsonb_agg(
+                 jsonb_build_object(
+                   'id_course_module', cm.id_course_module,
+                   'title',            cm.title,
+                   'description',      cm.description,
+                   'order',            cm."order",
+                   -- true se o aluno concluiu TODOS os episódios do módulo
+                   'module_completed',
+                     CASE
+                       WHEN total_eps.total_count > 0
+                         THEN (completed_eps.completed_count = total_eps.total_count)
+                       ELSE false
+                     END,
+                   'episodes',         COALESCE(eps.episodes, '[]'::jsonb)
+                 )
+                 ORDER BY cm."order"
+               ) AS modules
+        FROM course_module cm
+        -- total de episódios do módulo
+        LEFT JOIN LATERAL (
+          SELECT COUNT(*) AS total_count
+          FROM module_episode me0
+          WHERE me0.fk_id_course_module = cm.id_course_module
+        ) AS total_eps ON TRUE
+        -- quantos episódios desse módulo o aluno concluiu (DISTINCT evita contagem duplicada)
+        LEFT JOIN LATERAL (
+          SELECT COUNT(DISTINCT me1.id_module_episode) AS completed_count
+          FROM module_episode me1
+          JOIN episode_progress ep1
+            ON ep1.fk_id_module_episode = me1.id_module_episode
+          WHERE me1.fk_id_course_module = cm.id_course_module
+            AND ep1.fk_id_student = $2
+            AND ep1.completed = true
+            -- Se existir coluna de curso em episode_progress, pode reforçar:
+            -- AND ep1.fk_id_course = c.id_course
+        ) AS completed_eps ON TRUE
+        -- lista de episódios do módulo (já com 'completed' por episódio para o aluno)
+        LEFT JOIN LATERAL (
+          SELECT jsonb_agg(
+                   jsonb_build_object(
+                     'id_module_episode', me.id_module_episode,
+                     'title',             me.title,
+                     'description',       me.description,
+                     'order',             me."order",
+                     'link_episode',      me.link_episode,
+                     'completed',
+                       EXISTS (
+                         SELECT 1
+                         FROM episode_progress ep
+                         WHERE ep.fk_id_module_episode = me.id_module_episode
+                           AND ep.fk_id_student = $2
+                           AND ep.completed = true
+                           -- AND ep.fk_id_course = c.id_course -- se existir essa coluna
+                       )
+                   )
+                   ORDER BY me."order"
+                 ) AS episodes
+          FROM module_episode me
+          WHERE me.fk_id_course_module = cm.id_course_module
+        ) AS eps ON TRUE
+        WHERE cm.fk_id_course = c.id_course
+      ) AS mods ON TRUE
+      WHERE c.id_course = $1
+    `;
+
+    const rows = await this.courseRepository.query(sql, [courseId, studentId]);
+
+    return rows?.[0]?.course_json ?? null;
+
+  }
 
 
 }

@@ -50,16 +50,17 @@ export class CourseRegistrationService {
     }
   }
 
-  async finishCourseRegistration(id: number, userReq: TokenPayloadDto) {
+  async finishCourseRegistration(courseId: string, userReq: TokenPayloadDto) {
     
     const courseRegistration = await this.courseRegistrationRepository.preload({
-      id_course_registration: id,
+      fk_id_student: userReq.sub,
+      fk_id_course: courseId,
       state: 'F'
     });
 
     if(!courseRegistration){
 
-      throw new NotFoundException(`Matrícula com ID ${id} não encontrada!`);
+      throw new NotFoundException(`Matrícula não encontrada!`);
     
     }
 
@@ -78,9 +79,9 @@ export class CourseRegistrationService {
     
   }
 
-  async removeCourseRegistration(id: number, userReq: TokenPayloadDto) {
+  async removeCourseRegistration(courseId: string, userReq: TokenPayloadDto) {
     
-    const courseRegistrationExists = await this.findCourseRegistrationById(id);
+    const courseRegistrationExists = await this.findCourseRegistrationByUserAndCourseId(courseId, userReq.sub);
 
     if(!courseRegistrationExists) throw new NotFoundException('Matrícula não encontrada!');
 
@@ -89,7 +90,7 @@ export class CourseRegistrationService {
     }
 
     await this.courseRegistrationRepository.delete({
-      id_course_registration: id
+      id_course_registration: courseRegistrationExists.id_course_registration
     });
 
     return {
@@ -98,11 +99,12 @@ export class CourseRegistrationService {
     
   }
 
-  async findCourseRegistrationById(id:number){
+  async findCourseRegistrationByUserAndCourseId(courseId: string, userId: string){
 
     const courseRegistration = await this.courseRegistrationRepository.findOne({
       where: {
-        id_course_registration: id
+        fk_id_course: courseId,
+        fk_id_student: userId
       },
       select: {
         id_course_registration: true,

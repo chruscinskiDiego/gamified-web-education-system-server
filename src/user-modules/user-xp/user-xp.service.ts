@@ -54,4 +54,84 @@ export class UserXpService {
     }
   }
 
+  async addXpByConcludedEpisode(episodeId: number, studentId: string) {
+
+
+    try {
+
+      const userXp = await this.userXpRepository.findOne({
+        where: {
+          fk_id_student: studentId
+        }
+      });
+
+      if (!userXp) throw new NotFoundException('XP não encontrado para o usuário!');
+
+      const { id_xp, points, ...xpData } = userXp;
+
+      const currentXp: number = points;
+
+      const xpQuantityByEp: number = await this.validateXpQuantityByEpisodeId(episodeId);
+
+      const newTotalXp: number = currentXp + xpQuantityByEp;
+
+      const updatedXp = await this.userXpRepository.preload({
+        id_xp: id_xp,
+        points: newTotalXp,
+        ...xpData
+      });
+
+      if (!updatedXp) {
+        throw new NotFoundException('XP não encontrado para atualização!');
+      }
+
+      const savedUpdatedXp = await this.userXpRepository.save(updatedXp);
+
+      return {
+        xp: savedUpdatedXp
+      }
+
+    } catch (error) {
+
+      throw error;
+
+    }
+
+  }
+
+  async validateXpQuantityByEpisodeId(id: number) {
+
+    const difficultyQuery = await this.userXpRepository.query(`
+      select 
+        c.difficulty_level 
+        from course c
+        inner join course_module cm 
+        on c.id_course = cm.fk_id_course 
+        inner join module_episode me 
+        on cm.id_course_module = me.fk_id_course_module 
+        where me.id_module_episode = ${id}
+      `);
+
+    const difficultyLevel = difficultyQuery[0].difficulty_level;
+
+    if (difficultyLevel === 'H') {
+
+      return 35;
+
+    }
+    else if (difficultyLevel === 'M') {
+
+      return 25;
+
+    }
+    else if (difficultyLevel === 'E') {
+
+      return 15;
+
+    }
+    else {
+      return 0;
+    }
+  }
+
 }

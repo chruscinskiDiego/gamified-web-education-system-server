@@ -18,20 +18,20 @@ export class CourseRegistrationController {
     return this.courseRegistrationService.createCourseRegistration(createCourseRegistrationDto, userReq);
   }
 
-  @Patch('/finish/:id')
+  @Patch('/finish')
   async finishCourseRegistration(
-    @Param('id', ParseIntPipe) id: number,
+    @Body() createCourseRegistrationDto: CreateCourseRegistrationDto,
     @JwtUserReqParam() userReq: TokenPayloadDto
   ) {
-    return this.courseRegistrationService.finishCourseRegistration(id, userReq);
+    return this.courseRegistrationService.finishCourseRegistration(createCourseRegistrationDto.id_course, userReq);
   }
 
-  @Delete('/remove/:id')
+  @Patch('/remove/')
   async removeCourseRegistration(
-    @Param('id', ParseIntPipe) id: number,
+    @Body() createCourseRegistrationDto: CreateCourseRegistrationDto,
     @JwtUserReqParam() userReq: TokenPayloadDto
   ) {
-    return this.courseRegistrationService.removeCourseRegistration(id, userReq);
+    return this.courseRegistrationService.removeCourseRegistration(createCourseRegistrationDto.id_course, userReq);
   }
 
   // TO-DO courses with registration by user
