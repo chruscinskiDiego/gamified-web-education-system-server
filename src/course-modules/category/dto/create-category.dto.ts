@@ -15,5 +15,6 @@ export class CreateCategoryDto {
         message: 'O tamanho máximo do nome de categoria é 255 caracteres!'
     })
     name:string;
+
     
 }

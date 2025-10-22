@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -29,10 +29,10 @@ export class CategoryController {
   @Roles(Role.ADMIN)
   @Patch('/update/:id')
   async updateCategoryById(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() updateCategoryDto: UpdateCategoryDto
   ) {
-    return this.categoryService.updateCategoryById(+id, updateCategoryDto);
+    return this.categoryService.updateCategoryById(id, updateCategoryDto);
   }
 
   @Roles(Role.ADMIN)

@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
+import { IsEnum, IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
+import { InsigniaRarity } from "../entities/insignia.entity";
 
 export class CreateInsigniaDto {
 
@@ -8,7 +9,7 @@ export class CreateInsigniaDto {
     @IsString({
         message: 'O nome da Insígnia deve ser uma string!'
     })
-    @MinLength(3 , {
+    @MinLength(3, {
         message: 'O tamanho mínimo para o nome da Insígnia é 3!'
     })
     @MaxLength(255, {
@@ -22,13 +23,16 @@ export class CreateInsigniaDto {
     @IsString({
         message: 'A descrição da Insígnia deve ser uma string!'
     })
-    @MinLength(3 , {
+    @MinLength(3, {
         message: 'O tamanho mínimo para a descrição da Insígnia é 3!'
     })
     @MaxLength(255, {
         message: 'O tamanho máximo para a descrição da Insígnia é 255!'
     })
     description: string;
+
+    @IsEnum(InsigniaRarity)
+    rarity: InsigniaRarity;
 
 
 }
