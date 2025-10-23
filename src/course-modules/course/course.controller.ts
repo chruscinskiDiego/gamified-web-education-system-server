@@ -154,4 +154,15 @@ export class CourseController {
     return this.courseService.getAllCourses();
     
   }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.TEACHER)
+  @Get('/statistics')
+  async getStatisticsByTeacherId(
+     @JwtUserReqParam() userReq: TokenPayloadDto,
+  ) {
+
+    return this.courseService.getStatisticsByTeacherId(userReq.sub);
+    
+  }
 }

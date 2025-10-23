@@ -111,6 +111,7 @@ export class CourseService {
         c.link_thumbnail,
         c.difficulty_level,
         c.created_at,
+        c.active,
         COUNT(cm.id_course_module) AS module_count
       FROM 
         course c
@@ -653,6 +654,267 @@ export class CourseService {
     );
 
     return courses[0].result.active_courses || [];
+
+  }
+
+  async getStatisticsByTeacherId(teacherId: string) {
+
+    const statistics = await this.courseRepository.query(
+      `
+      WITH
+      -- cursos do professor
+      tc AS (
+        SELECT c.id_course, c.title
+        FROM course c
+        WHERE c.fk_id_teacher = 'fc5ed71d-b1dc-43ed-affb-78d841de305b'
+      ),
+
+      -- notas unificadas (3 dimensões empilhadas)
+      u AS (
+        SELECT fk_id_course AS id_course, note::numeric AS note FROM material_quality_avaliation
+        UNION ALL
+        SELECT fk_id_course, note::numeric FROM didatics_avaliation
+        UNION ALL
+        SELECT fk_id_course, note::numeric FROM teaching_methodology_avaliation
+      ),
+
+      -- médias por dimensão (por curso)
+      dim_avgs AS (
+        SELECT
+          c.id_course,
+          ROUND(AVG(mqa.note)::numeric, 2) AS avg_material_quality,
+          ROUND(AVG(da.note)::numeric, 2)  AS avg_didactics,
+          ROUND(AVG(tma.note)::numeric, 2) AS avg_teaching_methodology
+        FROM tc c
+        LEFT JOIN material_quality_avaliation        mqa ON mqa.fk_id_course = c.id_course
+        LEFT JOIN didatics_avaliation                da  ON da.fk_id_course  = c.id_course
+        LEFT JOIN teaching_methodology_avaliation    tma ON tma.fk_id_course = c.id_course
+        GROUP BY c.id_course
+      ),
+
+      -- média geral por curso (3 dimensões juntas)
+      course_overall AS (
+        SELECT c.id_course, ROUND(AVG(u.note)::numeric, 2) AS avg_overall
+        FROM tc c
+        LEFT JOIN u ON u.id_course = c.id_course
+        GROUP BY c.id_course
+      ),
+
+      -- média geral do professor (todos os cursos)
+      teacher_overall AS (
+        SELECT ROUND(AVG(u.note)::numeric, 2) AS overall_average
+        FROM u
+        WHERE u.id_course IN (SELECT id_course FROM tc)
+      ),
+
+      -- mapa curso -> módulo -> episódio
+      map AS (
+        SELECT
+          c.id_course,
+          cm.id_course_module,
+          me.id_module_episode
+        FROM tc c
+        JOIN course_module  cm ON cm.fk_id_course       = c.id_course
+        JOIN module_episode me ON me.fk_id_course_module = cm.id_course_module
+      ),
+
+      episodes_per_course AS (
+        SELECT id_course, COUNT(DISTINCT id_module_episode) AS total_episodes
+        FROM map
+        GROUP BY id_course
+      ),
+
+      modules_per_course AS (
+        SELECT id_course, COUNT(DISTINCT id_course_module) AS total_modules
+        FROM map
+        GROUP BY id_course
+      ),
+
+      -- progresso por episódio (traz aluno e se concluiu)
+      progress AS (
+        SELECT
+          m.id_course,
+          m.id_course_module,
+          m.id_module_episode,
+          ep.fk_id_student,
+          ep.completed::boolean AS completed
+        FROM map m
+        JOIN episode_progress ep ON ep.fk_id_module_episode = m.id_module_episode
+      ),
+
+      -- engajamento por curso (contagens)
+      per_course_engagement AS (
+        SELECT
+          p.id_course,
+          COUNT(DISTINCT p.fk_id_student)                                          AS unique_students,
+          COUNT(DISTINCT (p.fk_id_student, p.id_module_episode))                   AS total_episode_progress_pairs,
+          COUNT(DISTINCT (CASE WHEN p.completed THEN ROW(p.fk_id_student, p.id_module_episode) END)) AS total_completions_pairs
+        FROM progress p
+        GROUP BY p.id_course
+      ),
+
+      -- taxa de conclusão por aluno em cada curso (episódios concluídos / total de episódios do curso)
+      per_student_completion AS (
+        SELECT
+          p.id_course,
+          p.fk_id_student,
+          COUNT(DISTINCT CASE WHEN p.completed THEN p.id_module_episode END)::numeric
+            / NULLIF(e.total_episodes, 0) AS completion_rate
+        FROM progress p
+        JOIN episodes_per_course e ON e.id_course = p.id_course
+        GROUP BY p.id_course, p.fk_id_student, e.total_episodes
+      ),
+
+      -- média da taxa de conclusão por curso (média entre alunos)
+      per_course_completion_avg AS (
+        SELECT id_course, ROUND(AVG(completion_rate)::numeric, 4) AS avg_completion_rate_per_student
+        FROM per_student_completion
+        GROUP BY id_course
+      ),
+
+      -- módulos acessados por curso (pelo menos um episódio com progresso)
+      modules_accessed AS (
+        SELECT
+          p.id_course,
+          COUNT(DISTINCT p.id_course_module) AS modules_accessed
+        FROM progress p
+        GROUP BY p.id_course
+      ),
+
+      -- visão geral de engajamento (todos os cursos do professor)
+      overall_engagement AS (
+        SELECT
+          COUNT(DISTINCT p.fk_id_student)                            AS unique_students,
+          COUNT(DISTINCT (p.fk_id_student, p.id_module_episode))     AS total_episode_progress_pairs,
+          COUNT(DISTINCT (CASE WHEN p.completed THEN ROW(p.fk_id_student, p.id_module_episode) END)) AS total_completions_pairs
+        FROM progress p
+      ),
+
+      overall_completion_avg AS (
+        -- média da taxa de conclusão considerando todos os (aluno, curso)
+        SELECT ROUND(AVG(completion_rate)::numeric, 4) AS avg_completion_rate_per_student
+        FROM per_student_completion
+      ),
+
+      -- agregações por curso para montar os arrays JSON
+      per_course_ratings AS (
+        SELECT
+          c.id_course,
+          c.title,
+          co.avg_overall,
+          da.avg_material_quality,
+          da.avg_didactics,
+          da.avg_teaching_methodology
+        FROM tc c
+        LEFT JOIN course_overall co ON co.id_course = c.id_course
+        LEFT JOIN dim_avgs      da ON da.id_course = c.id_course
+      ),
+      per_course_engagement_json AS (
+        SELECT
+          c.id_course,
+          c.title,
+          COALESCE(e.unique_students, 0)                              AS unique_students,
+          COALESCE(epc.total_episodes, 0)                             AS total_episodes,
+          COALESCE(e.total_episode_progress_pairs, 0)                 AS total_episode_progress_pairs,
+          COALESCE(e.total_completions_pairs, 0)                      AS total_completions_pairs,
+          COALESCE(pca.avg_completion_rate_per_student, 0)            AS avg_completion_rate_per_student
+        FROM tc c
+        LEFT JOIN per_course_engagement   e   ON e.id_course = c.id_course
+        LEFT JOIN episodes_per_course     epc ON epc.id_course = c.id_course
+        LEFT JOIN per_course_completion_avg pca ON pca.id_course = c.id_course
+      ),
+      per_course_modules_json AS (
+        SELECT
+          c.id_course,
+          c.title,
+          COALESCE(mp.total_modules, 0)    AS total_modules,
+          COALESCE(ma.modules_accessed, 0) AS modules_accessed,
+          CASE
+            WHEN COALESCE(mp.total_modules,0) > 0
+              THEN ROUND((COALESCE(ma.modules_accessed,0)::numeric / mp.total_modules) * 100, 2)
+            ELSE 0
+          END AS percent_modules_accessed
+        FROM tc c
+        LEFT JOIN modules_per_course mp ON mp.id_course = c.id_course
+        LEFT JOIN modules_accessed  ma ON ma.id_course = c.id_course
+      )
+
+      SELECT jsonb_build_object(
+        'teacher_id', 'fc5ed71d-b1dc-43ed-affb-78d841de305b',
+
+        'ratings', jsonb_build_object(
+          'overall_average', (SELECT overall_average FROM teacher_overall),
+          'per_course', COALESCE(
+            (
+              SELECT jsonb_agg(
+                      jsonb_build_object(
+                        'id_course', r.id_course,
+                        'title', r.title,
+                        'avg_overall', r.avg_overall,
+                        'avg_material_quality', r.avg_material_quality,
+                        'avg_didactics', r.avg_didactics,
+                        'avg_teaching_methodology', r.avg_teaching_methodology
+                      )
+                      ORDER BY r.title
+                    )
+              FROM per_course_ratings r
+            ),
+            '[]'::jsonb
+          )
+        ),
+
+        'engagement', jsonb_build_object(
+          'overall', jsonb_build_object(
+            'unique_students',                COALESCE((SELECT unique_students FROM overall_engagement), 0),
+            'total_episodes',                 COALESCE((SELECT SUM(total_episodes) FROM episodes_per_course), 0),
+            'total_episode_progress_pairs',   COALESCE((SELECT total_episode_progress_pairs FROM overall_engagement), 0),
+            'total_completions_pairs',        COALESCE((SELECT total_completions_pairs FROM overall_engagement), 0),
+            'avg_completion_rate_per_student',COALESCE((SELECT avg_completion_rate_per_student FROM overall_completion_avg), 0)
+          ),
+          'per_course', COALESCE(
+            (
+              SELECT jsonb_agg(
+                      jsonb_build_object(
+                        'id_course', e.id_course,
+                        'title', e.title,
+                        'total_episodes', e.total_episodes,
+                        'unique_students', e.unique_students,
+                        'total_episode_progress_pairs', e.total_episode_progress_pairs,
+                        'total_completions_pairs', e.total_completions_pairs,
+                        'avg_completion_rate_per_student', e.avg_completion_rate_per_student
+                      )
+                      ORDER BY e.title
+                    )
+              FROM per_course_engagement_json e
+            ),
+            '[]'::jsonb
+          )
+        ),
+
+        'modules_access', jsonb_build_object(
+          'per_course', COALESCE(
+            (
+              SELECT jsonb_agg(
+                      jsonb_build_object(
+                        'id_course', m.id_course,
+                        'title', m.title,
+                        'total_modules', m.total_modules,
+                        'modules_accessed', m.modules_accessed,
+                        'percent_modules_accessed', m.percent_modules_accessed
+                      )
+                      ORDER BY m.title
+                    )
+              FROM per_course_modules_json m
+            ),
+            '[]'::jsonb
+          )
+        )
+      ) AS dashboard;
+
+      `
+    );
+
+    return statistics[0].dashboard || [];
 
   }
 
