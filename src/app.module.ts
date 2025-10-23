@@ -18,6 +18,7 @@ import { ChallengeModule } from './gamification-modules/challenge/challenge.modu
 import { ChallengeUserProgressModule } from './gamification-modules/challenge-user-progress/challenge-user-progress.module';
 import { GoalModule } from './gamification-modules/goal/goal.module';
 import { RankingModule } from './gamification-modules/ranking/ranking.module';
+import { MailModule } from './external-tools/mail/mail.module';
 
 
 @Module({
@@ -51,7 +52,8 @@ import { RankingModule } from './gamification-modules/ranking/ranking.module';
     ChallengeModule,
     ChallengeUserProgressModule,
     GoalModule,
-    RankingModule
+    RankingModule,
+    MailModule
   ],
   controllers: [AppController],
   providers: [AppService],
