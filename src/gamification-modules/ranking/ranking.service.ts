@@ -25,6 +25,8 @@ export class RankingService {
       FROM "user" u
       JOIN user_xp uxp
         ON u.id_user = uxp.fk_id_student
+        WHERE u.active = TRUE
+        AND u.type = 'S'
       ORDER BY uxp.points DESC, u.id_user
       LIMIT 10;
       `

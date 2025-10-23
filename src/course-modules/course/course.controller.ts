@@ -134,4 +134,24 @@ export class CourseController {
     return this.courseService.getCourseDataAndProgressByCourseIdAndStudentId(id, userReq.sub);
     
   }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.STUDENT)
+  @Get('/user-registered')
+  async getRegisteredCoursesByUserId(
+    @JwtUserReqParam() userReq: TokenPayloadDto,
+  ) {
+
+    return this.courseService.getRegisteredCoursesByUserId(userReq.sub);
+    
+  }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.TEACHER, Role.ADMIN, Role.STUDENT)
+  @Get('/view-all')
+  async getAllCourses() {
+
+    return this.courseService.getAllCourses();
+    
+  }
 }

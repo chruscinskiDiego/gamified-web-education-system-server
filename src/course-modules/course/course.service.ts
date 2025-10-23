@@ -234,76 +234,102 @@ export class CourseService {
 
     const courses = await this.courseRepository.query(
       `
-          WITH registered AS (
-      SELECT
-        c.id_course,
-        c.title,
-        c.difficulty_level,
-        c.link_thumbnail,
-        ROUND(AVG(a.note)::numeric, 2) AS avaliation_average
-      FROM course c
-      JOIN course_registration cr
-        ON c.id_course = cr.fk_id_course
-      LEFT JOIN avaliation a
-        ON c.id_course = a.fk_id_course
-      WHERE cr.fk_id_student = '${userId}'
-      GROUP BY c.id_course, c.title, c.difficulty_level, c.link_thumbnail
-    ),
-    registered_json AS (
-      SELECT COALESCE(
-        jsonb_agg(
-          jsonb_build_object(
-            'id_course', id_course,
-            'title', title,
-            'difficulty_level', difficulty_level,
-            'link_thumbnail', link_thumbnail,
-            'avaliation_average', avaliation_average
-          )
-          ORDER BY id_course
+         WITH overall AS (
+          /* média geral por curso somando as 3 dimensões */
+          SELECT
+            u.fk_id_course AS id_course,
+            AVG(u.note)    AS avg_overall
+          FROM (
+            SELECT fk_id_course, note FROM material_quality_avaliation
+            UNION ALL
+            SELECT fk_id_course, note FROM didatics_avaliation
+            UNION ALL
+            SELECT fk_id_course, note FROM teaching_methodology_avaliation
+          ) u
+          GROUP BY u.fk_id_course
         ),
-        '[]'::jsonb
-      ) AS arr
-      FROM registered
-    ),
-    all_courses AS (
-      SELECT
-        c.id_course,
-        c.title,
-        c.difficulty_level,
-        c.link_thumbnail,
-        ROUND(AVG(a.note)::numeric, 2) AS avaliation_average
-      FROM course c
-      LEFT JOIN avaliation a
-        ON c.id_course = a.fk_id_course
-      GROUP BY c.id_course, c.title, c.difficulty_level, c.link_thumbnail
-    ),
-    top12 AS (
-      SELECT *
-      FROM all_courses
-      ORDER BY avaliation_average DESC NULLS LAST, id_course
-      LIMIT 12
-    ),
-    top12_json AS (
-      SELECT COALESCE(
-        jsonb_agg(
-          jsonb_build_object(
-            'id_course', id_course,
-            'title', title,
-            'difficulty_level', difficulty_level,
-            'link_thumbnail', link_thumbnail,
-            'avaliation_average', avaliation_average
-          )
+
+        /* cursos em que o aluno está matriculado, com média geral */
+        registered AS (
+          SELECT
+            c.id_course,
+            c.title,
+            c.difficulty_level,
+            c.link_thumbnail,
+            ROUND(o.avg_overall::numeric, 2) AS avaliation_average
+          FROM course c
+          JOIN course_registration cr
+            ON c.id_course = cr.fk_id_course
+          LEFT JOIN overall o
+            ON o.id_course = c.id_course
+          WHERE cr.fk_id_student = '${userId}'
+          AND c.active IS TRUE
+          GROUP BY
+            c.id_course, c.title, c.difficulty_level, c.link_thumbnail, o.avg_overall
+        ),
+
+        registered_json AS (
+          SELECT COALESCE(
+            jsonb_agg(
+              jsonb_build_object(
+                'id_course',          id_course,
+                'title',              title,
+                'difficulty_level',   difficulty_level,
+                'link_thumbnail',     link_thumbnail,
+                'avaliation_average', avaliation_average
+              )
+              ORDER BY id_course
+            ),
+            '[]'::jsonb
+          ) AS arr
+          FROM registered
+        ),
+
+        /* todos os cursos com média geral para montar o top 12 */
+        all_courses AS (
+          SELECT
+            c.id_course,
+            c.title,
+            c.difficulty_level,
+            c.link_thumbnail,
+            ROUND(o.avg_overall::numeric, 2) AS avaliation_average
+          FROM course c
+          LEFT JOIN overall o
+            ON o.id_course = c.id_course
+            WHERE c.active IS TRUE
+          GROUP BY
+            c.id_course, c.title, c.difficulty_level, c.link_thumbnail, o.avg_overall
+        ),
+
+        top12 AS (
+          SELECT *
+          FROM all_courses
           ORDER BY avaliation_average DESC NULLS LAST, id_course
+          LIMIT 12
         ),
-        '[]'::jsonb
-      ) AS arr
-      FROM top12
-    )
-    SELECT jsonb_build_object(
-      'registered_courses', registered_json.arr,
-      'highlighted_courses', top12_json.arr
-    ) AS result
-    FROM registered_json, top12_json;
+
+        top12_json AS (
+          SELECT COALESCE(
+            jsonb_agg(
+              jsonb_build_object(
+                'id_course',          id_course,
+                'title',              title,
+                'difficulty_level',   difficulty_level,
+                'link_thumbnail',     link_thumbnail,
+                'avaliation_average', avaliation_average
+              )
+              ORDER BY avaliation_average DESC NULLS LAST, id_course
+            ),
+            '[]'::jsonb
+          ) AS arr
+          FROM top12
+        )
+
+        SELECT jsonb_build_object(
+          'registered_courses',  registered_json.arr,
+          'highlighted_courses', top12_json.arr
+        ) AS result
+        FROM registered_json, top12_json;
       `
     );
 
@@ -530,6 +556,103 @@ export class CourseService {
     const rows = await this.courseRepository.query(sql, [courseId, studentId]);
 
     return rows?.[0]?.course_json ?? null;
+
+  };
+
+  async getRegisteredCoursesByUserId(userId: string) {
+
+    const courses = await this.courseRepository.query(`
+       WITH registered AS (
+          SELECT
+            c.id_course,
+            c.title,
+            c.difficulty_level,
+            c.link_thumbnail
+          FROM course c
+          JOIN course_registration cr
+            ON c.id_course = cr.fk_id_course
+          WHERE cr.fk_id_student = '${userId}'
+          GROUP BY c.id_course, c.title, c.difficulty_level, c.link_thumbnail
+        )
+        SELECT COALESCE(
+          jsonb_agg(
+            jsonb_build_object(
+              'id_course', id_course,
+              'title', title,
+              'difficulty_level', difficulty_level,
+              'link_thumbnail', link_thumbnail
+            )
+            ORDER BY id_course
+          ),
+          '[]'::jsonb
+        ) AS registered_courses
+        FROM registered;
+      `
+    );
+
+    return courses[0].registered_courses || [];
+
+  }
+
+  async getAllCourses() {
+
+    const courses = await this.courseRepository.query(
+      `
+      WITH overall AS (
+        SELECT u.fk_id_course AS id_course, AVG(u.note) AS avg_overall
+        FROM (
+          SELECT fk_id_course, note FROM material_quality_avaliation
+          UNION ALL SELECT fk_id_course, note FROM didatics_avaliation
+          UNION ALL SELECT fk_id_course, note FROM teaching_methodology_avaliation
+        ) u
+        GROUP BY u.fk_id_course
+      ),
+      active_courses AS (
+        SELECT
+          c.id_course,
+          c.title,
+          c.description,
+          c.difficulty_level,
+          c.link_thumbnail,
+          c.created_at,
+          ROUND(o.avg_overall::numeric, 2) AS avaliation_average,
+          ca.id_category   AS category_id,
+          ca."name"        AS category_name
+        FROM course c
+        LEFT JOIN category ca ON ca.id_category = c.fk_id_category
+        LEFT JOIN overall  o  ON o.id_course    = c.id_course
+        WHERE c.active IS TRUE
+        GROUP BY
+          c.id_course, c.title, c.description, c.difficulty_level, c.link_thumbnail,
+          c.created_at, o.avg_overall, ca.id_category, ca."name"
+      )
+      SELECT jsonb_build_object(
+        'active_courses',
+        COALESCE(
+          jsonb_agg(
+            jsonb_build_object(
+              'id_course',          id_course,
+              'title',              title,
+              'description',        description,
+              'difficulty_level',   difficulty_level,
+              'link_thumbnail',     link_thumbnail,
+              'created_at',         created_at,
+              'avaliation_average', avaliation_average,
+              'category',
+                CASE WHEN category_id IS NOT NULL THEN
+                  jsonb_build_object('id_category', category_id, 'name', category_name)
+                ELSE NULL END
+            )
+            ORDER BY created_at DESC NULLS LAST, id_course
+          ),
+          '[]'::jsonb
+        )
+      ) AS result
+      FROM active_courses;
+      `
+    );
+
+    return courses[0].result.active_courses || [];
 
   }
 
