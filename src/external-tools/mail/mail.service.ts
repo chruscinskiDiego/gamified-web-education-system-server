@@ -4,10 +4,10 @@ import { MAILER } from './mail.provider';
 
 @Injectable()
 export class MailService {
-    
+
   constructor(@Inject(MAILER) private readonly mailer: Transporter) {}
 
-  async sendSimple(opts: {
+  async send(opts: {
     to: string;
     subject: string;
     text?: string;
@@ -15,7 +15,7 @@ export class MailService {
   }) {
     const from = process.env.MAIL_FROM || process.env.SMTP_USER!;
     const info = await this.mailer.sendMail({
-      from,                // Ex.: "Meu App <seuemail@gmail.com>"
+      from,
       to: opts.to,
       subject: opts.subject,
       text: opts.text,

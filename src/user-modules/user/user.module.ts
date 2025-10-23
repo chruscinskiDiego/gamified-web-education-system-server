@@ -6,13 +6,15 @@ import { User } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { UserXpModule } from '../user-xp/user-xp.module';
 import { AmazonS3Module } from 'src/external-tools/amazon-s3/amazon-s3.module';
+import { MailModule } from 'src/external-tools/mail/mail.module';
 
 @Module({
   imports:[
     TypeOrmModule.forFeature([User]),
     AuthModule,
     UserXpModule,
-    AmazonS3Module
+    AmazonS3Module,
+    MailModule
   ],
   controllers: [UserController],
   providers: [UserService],

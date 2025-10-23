@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, UseGuards, UseInterceptors, BadRequestException, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, UseGuards, UseInterceptors, BadRequestException, UploadedFile, HttpCode, HttpStatus } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -10,6 +10,7 @@ import { JwtUserReqParam } from '../auth/params/token-payload.params';
 import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
+import { PasswordRecovery } from './dto/password-recovery.dto';
 
 @Controller('user-profile')
 export class UserController {
@@ -20,6 +21,14 @@ export class UserController {
     @Body() createUserDto: CreateUserDto
   ) {
     return await this.userService.createUserProfile(createUserDto);
+  }
+
+  @HttpCode(HttpStatus.OK)
+  @Post('/password-recovery')
+  async passwordRecoveryByEmail(
+    @Body() passwordRecoveryDto: PasswordRecovery
+  ) {
+    return await this.userService.passwordRecoveryByEmail(passwordRecoveryDto.email);
   }
 
   @UseGuards(AuthTokenGuard, RolesGuard)
