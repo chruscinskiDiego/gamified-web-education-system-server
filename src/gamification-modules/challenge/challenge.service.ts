@@ -241,30 +241,36 @@ export class ChallengeService {
     const challenge = await this.challengeRepository.query(
       `
       SELECT
-        chg.id_challenge,
-        chg.title as challenge_title,
-        chg.description AS challenge_description,
-        chg."type"      AS challenge_type,
-        chg.quantity as challenge_quantity,
-        chg.active as challenge_active,
-        cup.status as challenge_user_status,
-        i.name          AS insignia_name,
-        i.description   AS insignia_description,
-        i.rarity as insignia_rarity,
-        COALESCE((cup.id_challenge_user_progress IS NOT NULL), false) AS user_sub
-      FROM challenge AS chg
-      JOIN insignia AS i
-        ON i.id_insignia = chg.fk_id_insignia
-      LEFT JOIN LATERAL (
-        SELECT cup.*
-        FROM challenge_user_progress AS cup
-        WHERE cup.fk_id_challenge = chg.id_challenge
-          AND cup.fk_id_student  = '${userReq.sub}'
-        ORDER BY cup.id_challenge_user_progress DESC
-        LIMIT 1
-      ) AS cup ON true
-      WHERE chg.active = true
-        AND chg.id_challenge = ${id};
+      chg.id_challenge,
+      chg.title        AS challenge_title,
+      chg.description  AS challenge_description,
+      chg."type"       AS challenge_type,
+      chg.quantity     AS challenge_quantity,
+      chg.active       AS challenge_active,
+      cup.status       AS challenge_user_status,
+      cup.id_challenge_user_progress AS id_challenge_user_progress,
+      i.name           AS insignia_name,
+      i.description    AS insignia_description,
+      i.rarity         AS insignia_rarity,
+      CASE
+        WHEN cup.id_challenge_user_progress IS NULL THEN NULL::boolean
+        ELSE TRUE
+      END AS user_sub
+    FROM challenge AS chg
+    JOIN insignia AS i
+      ON i.id_insignia = chg.fk_id_insignia
+    LEFT JOIN LATERAL (
+      SELECT
+        cup.id_challenge_user_progress,
+        cup.status
+      FROM challenge_user_progress AS cup
+      WHERE cup.fk_id_challenge = chg.id_challenge
+        AND cup.fk_id_student   = '${userReq.sub}'
+      ORDER BY cup.id_challenge_user_progress DESC
+      LIMIT 1
+    ) AS cup ON true
+    WHERE chg.active = true
+      AND chg.id_challenge = ${id};
       `
     );
 
@@ -290,6 +296,7 @@ export class ChallengeService {
 
       challenge: {
         id_challenge: firstChallenge.id_challenge,
+        id_challenge_user_progress: firstChallenge.id_challenge_user_progress,
         title: firstChallenge.challenge_title,
         description: firstChallenge.challenge_description,
         quantity: firstChallenge.challenge_quantity,

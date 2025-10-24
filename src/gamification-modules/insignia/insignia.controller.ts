@@ -6,6 +6,8 @@ import { AuthTokenGuard } from 'src/user-modules/auth/guards/auth-token.guard';
 import { RolesGuard } from 'src/user-modules/roles/guard/roles.guard';
 import { Roles } from 'src/user-modules/roles/decorator/roles.decorator';
 import { Role } from 'src/user-modules/roles/enum/roles.enum';
+import { JwtUserReqParam } from 'src/user-modules/auth/params/token-payload.params';
+import { TokenPayloadDto } from 'src/user-modules/auth/dto/token-payload.dto';
 
 @UseGuards(AuthTokenGuard)
 @Controller('insignia')
@@ -19,11 +21,15 @@ export class InsigniaController {
     return this.insigniaService.createInsignia(createInsigniaDto);
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Get('/view-all')
   async findAllInsignias() {
     return this.insigniaService.findAllInsignias();
   }
 
+  @UseGuards(RolesGuard)
+  @Roles(Role.ADMIN)
   @Get('/view-by-id/:id')
   async findOneInsignia(@Param('id') id: string) {
     return this.insigniaService.findInsigniaById(+id);
@@ -41,5 +47,16 @@ export class InsigniaController {
   @Delete('/delete/:id')
   async removeInsigniaById(@Param('id') id: string) {
     return this.insigniaService.removeInsigniaById(+id);
+  }
+
+  @UseGuards(RolesGuard)
+  @Roles(Role.STUDENT)
+  @Get('/view-by-student')
+  async viewInsigniasByStudentId(
+    @JwtUserReqParam() userReq: TokenPayloadDto
+  ) {
+
+    return this.insigniaService.viewInsigniasByStudentId(userReq.sub);
+
   }
 }

@@ -108,4 +108,26 @@ export class InsigniaService {
       message: 'Insígnia removida com sucesso!'
     }
   }
+
+  async viewInsigniasByStudentId(id: string){
+
+    const insignias = await this.insigniaRepository.query(
+      `
+      select
+      i.*,
+      cup.end_date as claimed_at
+      from challenge_user_progress cup
+      inner join challenge c 
+      on cup.fk_id_challenge = c.id_challenge 
+      inner join insignia i
+      on c.fk_id_insignia  = i.id_insignia
+      where cup.fk_id_student = '${id}'
+      and cup.status = 'F'
+      order by cup.end_date desc
+      `
+    );
+
+    return insignias || [];
+
+  }
 }
