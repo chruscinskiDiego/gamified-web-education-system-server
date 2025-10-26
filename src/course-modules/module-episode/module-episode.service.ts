@@ -212,7 +212,7 @@ export class ModuleEpisodeService {
 
   }
 
-  async setEpisodeMedia(id: number, userReq: TokenPayloadDto, file: Express.Multer.File) {
+  async setEpisodeMedia(id: number, file: Express.Multer.File) {
 
     try {
 

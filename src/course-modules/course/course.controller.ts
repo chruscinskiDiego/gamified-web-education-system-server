@@ -107,7 +107,7 @@ export class CourseController {
     @JwtUserReqParam() userReq: TokenPayloadDto
   ) {
 
-    return this.courseService.getRegisteredAndHighlightedCoursesByUserId(userReq.sub);
+    return this.courseService.getRegisteredAndHighlightedCoursesByUserId(userReq.sub); 
 
   }
 

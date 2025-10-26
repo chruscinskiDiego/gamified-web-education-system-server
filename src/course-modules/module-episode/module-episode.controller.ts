@@ -71,9 +71,8 @@ export class ModuleEpisodeController {
   @Post('/set-media/:id')
   async setEpisodeMedia(
     @Param('id', ParseIntPipe) id: number,
-    @JwtUserReqParam() userReq: TokenPayloadDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.moduleEpisodeService.setEpisodeMedia(id, userReq, file)
+    return this.moduleEpisodeService.setEpisodeMedia(id, file)
   }
 }
