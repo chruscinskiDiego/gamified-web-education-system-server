@@ -5,6 +5,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ChallengeUserProgress } from './entities/challenge-user-progress.entity';
 import { Repository } from 'typeorm';
 import { TokenPayloadDto } from 'src/user-modules/auth/dto/token-payload.dto';
+import { UserXpService } from 'src/user-modules/user-xp/user-xp.service';
 
 @Injectable()
 export class ChallengeUserProgressService {
@@ -12,6 +13,8 @@ export class ChallengeUserProgressService {
   constructor(
     @InjectRepository(ChallengeUserProgress)
     private readonly challengeUserProgressRepository: Repository<ChallengeUserProgress>,
+
+    private readonly userXpService: UserXpService
   ) { }
 
   async joinInChallenge(joinChallengeDto: JoinChallengeDto, userReq: TokenPayloadDto) {
@@ -68,33 +71,51 @@ export class ChallengeUserProgressService {
     const finishXp = finishChallengeDto.end_xp;
 
 
-    if (challengeType === 'X') {
+    try {
 
-      const isValid = this.auxValidateXpChallenge(challengeQuantity, startXp, finishXp);
 
-      if (!isValid) throw new BadRequestException('Quantidade de XP necessária ainda não obtida: ' + challengeQuantity + ' XP');
+      if (challengeType === 'X') {
 
+        const isValid = this.auxValidateXpChallenge(challengeQuantity, startXp, finishXp);
+
+        if (!isValid) throw new BadRequestException('Quantidade de XP necessária ainda não obtida: ' + challengeQuantity + ' XP');
+
+      }
+      else {
+
+        const isValid = this.auxValidateDateCountChallenge(challengeQuantity, startDate, finishDate);
+
+        if (!isValid) throw new BadRequestException('A data limite para finalizar este desafio já foi ultrapassada: ' + challengeQuantity + 'dia(s)');
+
+        const courseFinished = await this.auxValidateUserFinishedCourse(challengeProgress.fk_id_student, challengeProgress.fk_id_course);
+
+        if (!courseFinished) throw new BadRequestException('Em desafios do tipo DATA você precisa terminar o curso para reinvidicar a recompensa!');
+
+      }
+
+      await this.challengeUserProgressRepository.update(challengeProgress.id_challenge_user_progress, {
+        end_xp: finishChallengeDto.end_xp,
+        status: 'F'
+      });
+
+      const rarity = await this.auxGetRarityFromInsignia(challengeProgress.id_challenge_user_progress);
+
+      const xpRewardQuantity = this.auxGetXpRewardByInsigniaRarity(rarity);
+
+      const updatedUserXpQuantity = await this.userXpService.addXpByChallengeConcluded(userReq.sub, xpRewardQuantity);
+
+
+      return {
+        message: 'Desafio finalizado com sucesso!',
+        finished_user_finished_id: challengeProgress.id_challenge_user_progress,
+        userXp: updatedUserXpQuantity
+      }
     }
-    else {
 
-      const isValid = this.auxValidateDateCountChallenge(challengeQuantity, startDate, finishDate);
+    catch (error) {
 
-      if (!isValid) throw new BadRequestException('A data limite para finalizar este desafio já foi ultrapassada: ' + challengeQuantity + 'dia(s)');
+      throw error;
 
-      const courseFinished = await this.auxValidateUserFinishedCourse(challengeProgress.fk_id_student, challengeProgress.fk_id_course);
-
-      if (!courseFinished) throw new BadRequestException('Em desafios do tipo DATA você precisa terminar o curso para reinvidicar a recompensa!');
-
-    }
-
-    await this.challengeUserProgressRepository.update(challengeProgress.id_challenge_user_progress, {
-      end_xp: finishChallengeDto.end_xp,
-      status: 'F'
-    });
-
-    return {
-      message: 'Desafio finalizado com sucesso!',
-      finished_user_finished_id: challengeProgress.id_challenge_user_progress
     }
 
   }
@@ -129,6 +150,14 @@ export class ChallengeUserProgressService {
 
     const obtainedXp = finishXp - startXp;
 
+    console.log('xp inicial: ' + startXp);
+
+    console.log('xp final: ' + finishXp);
+
+    console.log("xp obtido: " + obtainedXp);
+
+    console.log(`passa? ${+ obtainedXp >= challengeXp ? true : false}`);
+
     return obtainedXp >= challengeXp ? true : false;
 
   }
@@ -141,6 +170,48 @@ export class ChallengeUserProgressService {
     const daysPassed = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     return daysPassed <= challengeDateCount ? true : false;
+
+  }
+
+  async auxGetRarityFromInsignia(challengeUserProgressId: number) {
+
+    const rarity = await this.challengeUserProgressRepository.query(`
+      select 
+      i.rarity 
+      from challenge cha
+      inner join challenge_user_progress cup 
+      on cha.id_challenge = cup.fk_id_challenge
+      inner join insignia i 
+      on cha.fk_id_insignia = i.id_insignia
+      where cup.id_challenge_user_progress = ${challengeUserProgressId}
+      `);
+
+    return rarity[0].rarity;
+
+  }
+
+  auxGetXpRewardByInsigniaRarity(rarity: string){
+
+    if(rarity === "COMMON"){
+
+      return 100;
+
+    }
+    else if(rarity === "RARE"){
+
+      return 200;
+
+    }
+    else if(rarity === "LEGENDARY"){
+
+      return 300;
+
+    }
+    else {
+
+      return 0 ;
+
+    }
 
   }
 

@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserXpDto } from './dto/create-user-xp.dto';
 import { UpdateUserXpDto } from './dto/update-user-xp.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -132,6 +132,26 @@ export class UserXpService {
     else {
       return 0;
     }
+  }
+
+  async addXpByChallengeConcluded(studentId: string, xpToAdd: number) {
+
+    const userXp = await this.userXpRepository.findOne({
+      where: {
+        fk_id_student: studentId
+      }
+    });
+
+    if (!userXp) throw new BadRequestException('XP do usuário não encontrado!');
+
+    const updatedUserXp = userXp.points + xpToAdd;
+
+    await this.userXpRepository.update(userXp.id_xp, {
+      points: updatedUserXp
+    });
+
+    return updatedUserXp;
+    
   }
 
 }
