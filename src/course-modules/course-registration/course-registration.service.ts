@@ -12,12 +12,12 @@ export class CourseRegistrationService {
   constructor(
     @InjectRepository(CourseRegistration)
     private readonly courseRegistrationRepository: Repository<CourseRegistration>
-  ){}
+  ) { }
 
   async createCourseRegistration(
 
     createCourseRegistrationDto: CreateCourseRegistrationDto, userReq: TokenPayloadDto) {
-    
+
     const userId = userReq.sub;
     const courseId = createCourseRegistrationDto.id_course;
 
@@ -27,11 +27,11 @@ export class CourseRegistrationService {
       fk_id_course: courseId
     };
 
-    try{
+    try {
 
       const registerExists = await this.existsCourseRegistrationByCourseIdAndUser(courseId, userId);
 
-      if(registerExists) throw new ConflictException('Matrícula já existente!');
+      if (registerExists) throw new ConflictException('Matrícula já existente!');
 
       const createdCourse = await this.courseRegistrationRepository.create(registrationDTO);
 
@@ -42,7 +42,7 @@ export class CourseRegistrationService {
         created_course_registration_id: savedCourse.id_course_registration
       }
     }
-    catch(error){
+    catch (error) {
 
       console.log(JSON.stringify(error));
 
@@ -51,41 +51,30 @@ export class CourseRegistrationService {
   }
 
   async finishCourseRegistration(courseId: string, userReq: TokenPayloadDto) {
-    
-    const courseRegistration = await this.courseRegistrationRepository.preload({
-      fk_id_student: userReq.sub,
-      fk_id_course: courseId,
-      state: 'F'
-    });
 
-    if(!courseRegistration){
+    const result = await this.courseRegistrationRepository.update(
+      { fk_id_course: courseId, fk_id_student: userReq.sub },
+      { state: 'F' }
+    );
 
-      throw new NotFoundException(`Matrícula não encontrada!`);
-    
+    if (result.affected === 0) {
+      throw new NotFoundException('Matrícula não encontrada!');
     }
-
-    if((courseRegistration?.fk_id_student !== userReq.sub) && (userReq.role !== 'admin')){
-
-      throw new ForbiddenException('Você não tem permissão para finalizar esta matrícula!');
-    
-    }
-
-    await this.courseRegistrationRepository.save(courseRegistration);
 
     return {
-      message: 'Matrícula finalizada com sucesso!',
-      finished_course_registration_id: courseRegistration.id_course_registration
-    }
-    
+      message: 'Matrícula finalizada com sucesso!'
+    };
+
   }
 
+
   async removeCourseRegistration(courseId: string, userReq: TokenPayloadDto) {
-    
+
     const courseRegistrationExists = await this.findCourseRegistrationByUserAndCourseId(courseId, userReq.sub);
 
-    if(!courseRegistrationExists) throw new NotFoundException('Matrícula não encontrada!');
+    if (!courseRegistrationExists) throw new NotFoundException('Matrícula não encontrada!');
 
-    if((courseRegistrationExists.fk_id_student !== userReq.sub) && (userReq.role !== 'admin')) {
+    if ((courseRegistrationExists.fk_id_student !== userReq.sub) && (userReq.role !== 'admin')) {
       throw new ForbiddenException('Você não tem permissão para cancelar esta matrícula!');
     }
 
@@ -96,10 +85,10 @@ export class CourseRegistrationService {
     return {
       message: 'Matrícula cancelada com sucesso!'
     }
-    
+
   }
 
-  async findCourseRegistrationByUserAndCourseId(courseId: string, userId: string){
+  async findCourseRegistrationByUserAndCourseId(courseId: string, userId: string) {
 
     const courseRegistration = await this.courseRegistrationRepository.findOne({
       where: {
@@ -116,7 +105,7 @@ export class CourseRegistrationService {
 
   }
 
-  async existsCourseRegistrationByCourseIdAndUser(courseId: string, userId: string ){
+  async existsCourseRegistrationByCourseIdAndUser(courseId: string, userId: string) {
 
     const courseRegistration = await this.courseRegistrationRepository.findOne({
       where: {

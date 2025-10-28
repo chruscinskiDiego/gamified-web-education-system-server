@@ -265,6 +265,7 @@ export class CourseService {
             ON o.id_course = c.id_course
           WHERE cr.fk_id_student = '${userId}'
           AND c.active IS TRUE
+          AND cr.state = 'S'
           GROUP BY
             c.id_course, c.title, c.difficulty_level, c.link_thumbnail, o.avg_overall
         ),
