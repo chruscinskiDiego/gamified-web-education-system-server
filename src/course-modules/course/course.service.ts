@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateCourseDto } from './dto/create-course.dto';
 import { UpdateCourseDto } from './dto/update-course.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,7 +6,7 @@ import { Course } from './entities/course.entity';
 import { Repository } from 'typeorm';
 import { TokenPayloadDto } from 'src/user-modules/auth/dto/token-payload.dto';
 import { AmazonS3Service } from 'src/external-tools/amazon-s3/amazon-s3.service';
-import { CourseRegistration } from '../course-registration/entities/course-registration.entity';
+
 
 @Injectable()
 export class CourseService {
@@ -14,9 +14,6 @@ export class CourseService {
   constructor(
     @InjectRepository(Course)
     private readonly courseRepository: Repository<Course>,
-
-    @InjectRepository(CourseRegistration)
-    private readonly courseRegistrationRepository: Repository<CourseRegistration>,
 
     private readonly amazonS3Service: AmazonS3Service
   ) { }
@@ -669,7 +666,7 @@ export class CourseService {
       tc AS (
         SELECT c.id_course, c.title
         FROM course c
-        WHERE c.fk_id_teacher = 'fc5ed71d-b1dc-43ed-affb-78d841de305b'
+        WHERE c.fk_id_teacher = '${teacherId}'
       ),
 
       -- notas unificadas (3 dimensões empilhadas)
@@ -843,7 +840,7 @@ export class CourseService {
       )
 
       SELECT jsonb_build_object(
-        'teacher_id', 'fc5ed71d-b1dc-43ed-affb-78d841de305b',
+        'teacher_id', '${teacherId}',
 
         'ratings', jsonb_build_object(
           'overall_average', (SELECT overall_average FROM teacher_overall),

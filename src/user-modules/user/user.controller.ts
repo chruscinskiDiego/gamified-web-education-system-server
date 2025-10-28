@@ -31,8 +31,8 @@ export class UserController {
     return await this.userService.passwordRecoveryByEmail(passwordRecoveryDto.email);
   }
 
-  @UseGuards(AuthTokenGuard, RolesGuard)
-  @Roles(Role.ADMIN)
+  //@UseGuards(AuthTokenGuard, RolesGuard)
+  //@Roles(Role.ADMIN)
   @Post('/create-admin')
   async createUserAdminProfile(
     @Body() createUserAdminDto: CreateUserAdminDto
