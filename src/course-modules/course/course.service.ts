@@ -348,6 +348,7 @@ export class CourseService {
         c.description,
         c.link_thumbnail,
         c.difficulty_level,
+        ca.name as category,
         c.created_at,
         teach.name || ' ' || teach.surname as teacher_full_name,
         teach.profile_picture_link as teacher_profile_picture,
@@ -388,7 +389,8 @@ export class CourseService {
       AND cr.fk_id_student = '${studentId}'
       LEFT JOIN "user" teach
         ON c.fk_id_teacher = teach.id_user
-
+      LEFT JOIN category ca
+      	ON ca.id_category = c.fk_id_category 
       /* ---- OVERALL (média geral + contagem) ---- */
       LEFT JOIN LATERAL (
         SELECT AVG(u.note) AS avg_overall, COUNT(*) AS cnt_overall
