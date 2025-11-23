@@ -1,4 +1,4 @@
-import { IsDateString, IsEmail, IsIn, IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
+import { IsDateString, IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from "class-validator";
 
 export class CreateUserAdminDto {
 
