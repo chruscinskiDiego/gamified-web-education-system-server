@@ -31,13 +31,20 @@ export class UserController {
     return await this.userService.passwordRecoveryByEmail(passwordRecoveryDto.email);
   }
 
-  //@UseGuards(AuthTokenGuard, RolesGuard)
-  //@Roles(Role.ADMIN)
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post('/create-admin')
   async createUserAdminProfile(
     @Body() createUserAdminDto: CreateUserAdminDto
   ) {
     return await this.userService.createUserAdminProfile(createUserAdminDto);
+  }
+
+  @UseGuards(AuthTokenGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  @Get('/find-all-admins')
+  async findAllAdminUsers() {
+    return await this.userService.findAllAdminUsers();
   }
 
   @UseGuards(AuthTokenGuard)

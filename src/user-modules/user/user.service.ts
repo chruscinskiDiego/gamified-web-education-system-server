@@ -118,6 +118,25 @@ export class UserService {
     }
   }
 
+  async findAllAdminUsers(){
+
+    const admins = await this.userRepository.find({
+      where:{
+        type: 'A' as any,
+      },
+      select: {
+        id_user: true,
+        name: true,
+        surname: true,
+        email: true,
+        profile_picture_link: true,
+        active: true
+      }
+    });
+
+    return admins;
+  }
+
   async setUserProfilePicture(id: string, file: Express.Multer.File, sub: string) {
 
     if (sub !== id) {
