@@ -1,4 +1,4 @@
-import { IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsDateString, IsEmail, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class UpdateUserDto {
 
@@ -32,5 +32,9 @@ export class UpdateUserDto {
         message: 'O email do usuário deve ter no máximo 255 caracteres',
     })
     email: string;
+
+    @IsOptional()
+    @IsDateString()
+    birth_date: string;
 
 }

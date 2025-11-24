@@ -11,6 +11,7 @@ import { TokenPayloadDto } from '../auth/dto/token-payload.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { PasswordRecovery } from './dto/password-recovery.dto';
+import { PasswordUpdateDto } from './dto/password-update.dto';
 
 @Controller('user-profile')
 export class UserController {
@@ -108,6 +109,24 @@ export class UserController {
     @JwtUserReqParam() userReq: TokenPayloadDto
   ) {
     return await this.userService.disableUserProfileById(id, userReq);
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Patch('/enable/:id')
+  async enableUserProfileById(
+    @Param('id') id: string,
+    @JwtUserReqParam() userReq: TokenPayloadDto
+  ) {
+    return await this.userService.enableUserProfileById(id, userReq);
+  }
+
+  @UseGuards(AuthTokenGuard)
+  @Patch('/update-password/:id')
+  async updateUserPassword(
+    @Param('id') id: string,
+    @Body() password: PasswordUpdateDto,
+  ) {
+    return await this.userService.updateUserPasswordById(id, password);
   }
 
 }

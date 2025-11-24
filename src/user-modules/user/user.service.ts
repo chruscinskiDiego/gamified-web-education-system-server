@@ -11,6 +11,7 @@ import { AmazonS3Service } from 'src/external-tools/amazon-s3/amazon-s3.service'
 import { CreateUserAdminDto } from './dto/create-user-admin.dto';
 import { MailService } from 'src/external-tools/mail/mail.service';
 import { randomInt } from 'crypto';
+import { PasswordUpdateDto } from './dto/password-update.dto';
 
 @Injectable()
 export class UserService {
@@ -118,6 +119,36 @@ export class UserService {
     }
   }
 
+    async updateUserPasswordById(id:string, userPasswordDto: PasswordUpdateDto) {
+
+    try {
+
+      const { password } = userPasswordDto;
+
+      const passwordHash = await this.hashingService.hash(password);
+
+      await this.userRepository.update(id, {
+        password: passwordHash
+      });
+
+      return {
+        message: 'Senha de usuário atualizada com sucesso!'
+      }
+
+    }
+    catch (error) {
+
+      if (error.code === '23505') {
+
+        throw new ConflictException('Email já cadastrado');
+
+      }
+
+      throw error;
+
+    }
+  }
+
   async findAllAdminUsers(){
 
     const admins = await this.userRepository.find({
@@ -165,7 +196,7 @@ export class UserService {
 
   async findUserProfileById(id: string, jwtUserReq: TokenPayloadDto) {
 
-    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')) {
+    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'admin')) {
       throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
     }
 
@@ -192,7 +223,7 @@ export class UserService {
 
   async updateUserProfileById(id: string, updateUserDto: UpdateUserDto, jwtUserReq: TokenPayloadDto) {
 
-    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')) {
+    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'admin')) {
       throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
     }
 
@@ -216,7 +247,7 @@ export class UserService {
 
   async disableUserProfileById(id: string, jwtUserReq: TokenPayloadDto) {
 
-    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'ADMIN')) {
+    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'admin')) {
       throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
     }
 
@@ -246,6 +277,41 @@ export class UserService {
     return {
       message: 'Usuário desativado com sucesso!',
       deactivated_user_id: user.id_user
+    }
+  }
+
+  async enableUserProfileById(id: string, jwtUserReq: TokenPayloadDto) {
+
+    if ((jwtUserReq.sub !== id) && (jwtUserReq.role !== 'admin')) {
+      throw new UnauthorizedException(`Você não tem permissão para acessar o perfil de outro usuário.`);
+    }
+
+    const user = await this.userRepository.findOne({
+      where: {
+        id_user: id
+      },
+      select: {
+        id_user: true,
+        active: true,
+      }
+    });
+
+
+    if (!user) {
+      throw new NotFoundException(`Usuário com ID ${id} não encontrado`);
+    }
+
+    if (user.active) {
+      throw new ConflictException(`Usuário com ID ${id} já está ativado`);
+    }
+
+    await this.userRepository.update(id, {
+      active: true
+    });
+
+    return {
+      message: 'Usuário ativado com sucesso!',
+      activated_user_id: user.id_user
     }
   }
 

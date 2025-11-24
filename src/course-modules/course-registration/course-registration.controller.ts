@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Patch, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Patch, UseGuards, Param } from '@nestjs/common';
 import { CourseRegistrationService } from './course-registration.service';
 import { CreateCourseRegistrationDto } from './dto/create-course-registration.dto';
 import { JwtUserReqParam } from 'src/user-modules/auth/params/token-payload.params';
@@ -16,6 +16,14 @@ export class CourseRegistrationController {
     @JwtUserReqParam() userReq: TokenPayloadDto
   ) {
     return this.courseRegistrationService.createCourseRegistration(createCourseRegistrationDto, userReq);
+  }
+
+  @Post('/adm-create/:id')
+  async admCreateCourseRegistration(
+    @Param('id') id: string,
+    @Body() createCourseRegistrationDto: CreateCourseRegistrationDto,
+  ) {
+    return this.courseRegistrationService.admCreateCourseRegistration(createCourseRegistrationDto, id );
   }
 
   @Patch('/finish')

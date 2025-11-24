@@ -71,24 +71,25 @@ export class CourseService {
 
   async disableCourseById(id: string, userReq: TokenPayloadDto) {
 
-    const course = await this.courseRepository.preload({
-      id_course: id,
-      active: false
+    const course = await this.courseRepository.findOne({
+      where: {
+        id_course: id,
+      }
     });
-
-    if ((course?.fk_id_teacher !== userReq.sub) && (userReq.role !== 'admin')) {
-      throw new ForbiddenException('Você não tem permissão para desabilitar esse curso!');
-    }
 
     if (!course) {
       throw new NotFoundException(`Curso com ID ${id} não encontrado.`);
+    }
+
+    if ((course?.fk_id_teacher !== userReq.sub) && (userReq.role !== 'admin')) {
+      throw new ForbiddenException('Você não tem permissão para desabilitar esse curso!');
     }
 
     if (!course.active) {
       throw new ConflictException('Esse curso já está desativado!');
     }
 
-    await this.courseRepository.save(course);
+    await this.courseRepository.update(id, { active: false });
 
     return {
       message: 'Curso desativado com sucesso!',

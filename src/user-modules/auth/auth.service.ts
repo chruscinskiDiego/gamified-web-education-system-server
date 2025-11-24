@@ -29,6 +29,10 @@ export class AuthService {
             throw new UnauthorizedException('Email ou senha inválidos!');
         }
 
+        if(!user.active){
+            throw new UnauthorizedException('Usuário inativo. Contate o administrador do sistema.');
+        }
+
         const passwordIsValid = await this.hashingService.compare(
             loginDTO.password,
             user.password

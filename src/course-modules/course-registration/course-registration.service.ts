@@ -14,11 +14,42 @@ export class CourseRegistrationService {
     private readonly courseRegistrationRepository: Repository<CourseRegistration>
   ) { }
 
-  async createCourseRegistration(
-
-    createCourseRegistrationDto: CreateCourseRegistrationDto, userReq: TokenPayloadDto) {
+  async createCourseRegistration(createCourseRegistrationDto: CreateCourseRegistrationDto, userReq: TokenPayloadDto) {
 
     const userId = userReq.sub;
+    const courseId = createCourseRegistrationDto.id_course;
+
+    const registrationDTO = {
+      state: 'S',
+      fk_id_student: userId,
+      fk_id_course: courseId
+    };
+
+    try {
+
+      const registerExists = await this.existsCourseRegistrationByCourseIdAndUser(courseId, userId);
+
+      if (registerExists) throw new ConflictException('Matrícula já existente!');
+
+      const createdCourse = await this.courseRegistrationRepository.create(registrationDTO);
+
+      const savedCourse = await this.courseRegistrationRepository.save(createdCourse);
+
+      return {
+        message: 'Matrícula efetuada com sucesso!',
+        created_course_registration_id: savedCourse.id_course_registration
+      }
+    }
+    catch (error) {
+
+      console.log(JSON.stringify(error));
+
+      throw error;
+    }
+  }
+
+  async admCreateCourseRegistration(createCourseRegistrationDto: CreateCourseRegistrationDto, userId: string) {
+
     const courseId = createCourseRegistrationDto.id_course;
 
     const registrationDTO = {
