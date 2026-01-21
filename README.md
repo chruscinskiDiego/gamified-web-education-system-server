@@ -1,4 +1,4 @@
-# 🎮 Gamified web education system - server
+# Gamified web education system (server)
 
 Backend for my undergraduate capstone project (TCC): a web-based learning platform with **gamification**, built to increase engagement and improve student progress tracking through **XP**, **challenges**, **goals**, **badges**, and **ranking**. This work was approved by the evaluation committee with an average score of **9.9/10**.
 
