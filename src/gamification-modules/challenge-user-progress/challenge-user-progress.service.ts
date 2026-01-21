@@ -102,8 +102,8 @@ export class ChallengeUserProgressService {
 
       const xpRewardQuantity = this.auxGetXpRewardByInsigniaRarity(rarity);
 
+      //mostrar
       const updatedUserXpQuantity = await this.userXpService.addXpByChallengeConcluded(userReq.sub, xpRewardQuantity);
-
 
       return {
         message: 'Desafio finalizado com sucesso!',

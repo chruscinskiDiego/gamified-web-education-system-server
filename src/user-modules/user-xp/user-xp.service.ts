@@ -1,10 +1,9 @@
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserXpDto } from './dto/create-user-xp.dto';
-import { UpdateUserXpDto } from './dto/update-user-xp.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserXp } from './entities/user-xp.entity';
 import { Repository } from 'typeorm';
 
+//mostrar
 @Injectable()
 export class UserXpService {
 
@@ -71,6 +70,7 @@ export class UserXpService {
 
       const currentXp: number = points;
 
+      //baseada no nível de dificuldade do curso
       const xpQuantityByEp: number = await this.validateXpQuantityByEpisodeId(episodeId);
 
       const newTotalXp: number = currentXp + xpQuantityByEp;
@@ -99,6 +99,7 @@ export class UserXpService {
 
   }
 
+  //função para validar a quantidade de XP a ser adicionada conforme o nível de dificuldade do curso
   async validateXpQuantityByEpisodeId(id: number) {
 
     const difficultyQuery = await this.userXpRepository.query(`
@@ -134,6 +135,7 @@ export class UserXpService {
     }
   }
 
+  //função para adicionar XP quando o aluno conclui um desafio
   async addXpByChallengeConcluded(studentId: string, xpToAdd: number) {
 
     const userXp = await this.userXpRepository.findOne({
