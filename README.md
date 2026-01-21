@@ -1,4 +1,4 @@
-# 🎮 Gamified Web-based Learning System — Backend (NestJS)
+# 🎮 Gamified web education system - server
 
 Backend for my undergraduate capstone project (TCC): a web-based learning platform with **gamification**, built to increase engagement and improve student progress tracking through **XP**, **challenges**, **goals**, **badges**, and **ranking**. This work was approved by the evaluation committee with an average score of **9.9/10**.
 
@@ -55,7 +55,7 @@ The project also demonstrates important backend practices: **modular architectur
 
 ---
 
-## 🧰 Tech stack
+## Tech stack
 
 ### Core
 - **TypeScript**
@@ -78,13 +78,15 @@ The project also demonstrates important backend practices: **modular architectur
 git clone https://github.com/chruscinskiDiego/gamified-web-education-system-server
 cd gamified-web-education-system-server
 
+```
+
+```bash
 # 2) Install dependencies
 npm install
+```
 
-# 3) Start Postgres (Docker Compose)
-docker compose up -d
-
-# 4) Create .env (edit the VALUE placeholders afterwards)
+```bash
+# 3) Create .env
 cat > .env << 'EOF'
 # =========================
 # APP
@@ -101,7 +103,6 @@ DB_DATABASE=VALUE
 DB_USERNAME=VALUE
 DB_PASSWORD=VALUE
 
-# (Optional: if your project uses these compose variables)
 DB_COMPOSE_PORTS=VALUE
 DB_COMPOSE_POSTGRES_USER=VALUE
 DB_COMPOSE_POSTGRES_PASSWORD=VALUE
@@ -116,7 +117,7 @@ JWT_TOKEN_ISSUER=VALUE
 JWT_TOKEN_EXPIRATION=3600
 
 # =========================
-# AWS S3 SETTINGS (OPTIONAL)
+# AWS S3 SETTINGS
 # =========================
 AWS_REGION=sa-east-1
 AWS_ACCESS_KEY_ID=VALUE
@@ -124,7 +125,7 @@ AWS_SECRET_ACCESS_KEY=VALUE
 S3_BUCKET_NAME=VALUE
 
 # =========================
-# EMAIL SETTINGS (OPTIONAL)
+# EMAIL SETTINGS
 # =========================
 SMTP_HOST=VALUE
 SMTP_PORT=VALUE
@@ -133,6 +134,13 @@ SMTP_USER=VALUE
 SMTP_PASS=VALUE
 MAIL_FROM=VALUE
 EOF
+```
 
+```bash
+# 4) Start Postgres (Docker Compose)
+docker compose up -d
+```
+
+```bash
 # 5) Run the API (development)
 npm run start:dev
