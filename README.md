@@ -2,12 +2,9 @@
 
 Backend for my undergraduate capstone project (TCC): a web-based learning platform with **gamification**, built to increase engagement and improve student progress tracking through **XP**, **challenges**, **goals**, **badges**, and **ranking**. This work was approved by the evaluation committee with an average score of **9.9/10**.
 
-**Author:** Diego Chruscinski  
-**Repository:** https://github.com/chruscinskiDiego/gamified-web-education-system-server
-
 ---
 
-## 👀 Overview (API + ERD + Technologies)
+## Overview
 
 <p align="center">
   <img src="./docs/overview.png" alt="System overview (API + ERD + Technologies)" width="1000" />
@@ -22,7 +19,7 @@ This project exposes a **REST API** for an educational platform focused on **stu
 
 ---
 
-## ⭐ Context & value (for recruiters)
+## Context & value
 
 Learning platforms often struggle with **low retention** and lack of study consistency.  
 This backend was designed to support **gamification mechanics** that:
@@ -36,13 +33,13 @@ The project also demonstrates important backend practices: **modular architectur
 
 ---
 
-## ✅ Key features
+## Key features
 
 ### 📚 Content
 - **Courses:** create, list, update, plus role-based views (e.g., teacher)
 - **Modules & Lessons:** structured learning paths and per-lesson progress tracking
 
-### 🧪 Evaluations
+### ⭐ Evaluations
 - Structure for content evaluations and course statistics tracking
 
 ### 🕹️ Gamification
