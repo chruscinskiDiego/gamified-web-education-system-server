@@ -144,3 +144,15 @@ docker compose up -d
 ```bash
 # 5) Run the API (development)
 npm run start:dev
+```
+
+## Related client and checks
+
+Frontend: [gamified-web-education-system-client](https://github.com/chruscinskiDiego/gamified-web-education-system-client).
+
+```bash
+npm run build
+npm test
+```
+
+Database names, users, passwords and ports must match between DB_* and DB_COMPOSE_* settings. Review the TypeORM synchronization settings before using persistent or production data. External integrations require their own provider configuration.
